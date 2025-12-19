@@ -1,16 +1,110 @@
 {
-	"pages": [ //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
+	"pages": [
 		{
-			"path": "pages/index/index",
+			"path": "pages/tabbar/browse/browse",
 			"style": {
-				"navigationBarTitleText": "uni-app"
+				"navigationBarTitleText": "浏览",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/tabbar/recent/recent",
+			"style": {
+				"navigationBarTitleText": "最近",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/tabbar/collection/collection",
+			"style": {
+				"navigationBarTitleText": "收藏",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/tabbar/profile/profile",
+			"style": {
+				"navigationBarTitleText": "我的",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/category/sub-list/sub-list",
+			"style": {
+				"navigationBarTitleText": "子分类"
+			}
+		},
+		{
+			"path": "pages/category/content-list/content-list",
+			"style": {
+				"navigationBarTitleText": "内容"
+			}
+		},
+		{
+			"path": "pages/content/image-detail/image-detail",
+			"style": {
+				"navigationBarTitleText": "图片详情",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/content/note-detail/note-detail",
+			"style": {
+				"navigationBarTitleText": "笔记详情"
+			}
+		},
+		{
+			"path": "pages/content/create-image/create-image",
+			"style": {
+				"navigationBarTitleText": "上传图片"
+			}
+		},
+		{
+			"path": "pages/content/create-note/create-note",
+			"style": {
+				"navigationBarTitleText": "创建笔记"
 			}
 		}
 	],
 	"globalStyle": {
-		"navigationBarTextStyle": "black",
-		"navigationBarTitleText": "uni-app",
-		"navigationBarBackgroundColor": "#F8F8F8",
-		"backgroundColor": "#F8F8F8"
+		"navigationBarTextStyle": "white",
+		"navigationBarTitleText": "河图洛书",
+		"navigationBarBackgroundColor": "#1a1a1a",
+		"backgroundColor": "#121212",
+		"backgroundColorTop": "#121212",
+		"backgroundColorBottom": "#121212"
+	},
+	"tabBar": {
+		"color": "#8f8f94",
+		"selectedColor": "#00c4b3",
+		"backgroundColor": "rgba(26, 26, 26, 0.95)",
+		"borderStyle": "black",
+		"blurEffect": "dark",
+		"list": [
+			{
+				"pagePath": "pages/tabbar/recent/recent",
+				"iconPath": "static/tabbar/recent.png",
+				"selectedIconPath": "static/tabbar/recent-active.png",
+				"text": "最近"
+			},
+			{
+				"pagePath": "pages/tabbar/browse/browse",
+				"iconPath": "static/tabbar/browse.png",
+				"selectedIconPath": "static/tabbar/browse-active.png",
+				"text": "浏览"
+			},
+			{
+				"pagePath": "pages/tabbar/collection/collection",
+				"iconPath": "static/tabbar/collection.png",
+				"selectedIconPath": "static/tabbar/collection-active.png",
+				"text": "收藏"
+			},
+			{
+				"pagePath": "pages/tabbar/profile/profile",
+				"iconPath": "static/tabbar/profile.png",
+				"selectedIconPath": "static/tabbar/profile-active.png",
+				"text": "我的"
+			}
+		]
 	}
 }
