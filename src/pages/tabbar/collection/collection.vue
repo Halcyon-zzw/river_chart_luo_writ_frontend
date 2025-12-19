@@ -207,7 +207,7 @@ onMounted(() => {
 <style scoped>
 .collection-page {
   min-height: 100vh;
-  background: #121212;
+  background: #f5f5f5;
 }
 
 /* 自定义导航栏 */
@@ -219,20 +219,20 @@ onMounted(() => {
   height: 88rpx;
   padding-top: constant(safe-area-inset-top);
   padding-top: env(safe-area-inset-top);
-  background: rgba(26, 26, 26, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20rpx);
   -webkit-backdrop-filter: blur(20rpx);
   z-index: 999;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-bottom: 1rpx solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.08);
 }
 
 .navbar-title {
   font-size: 36rpx;
   font-weight: 600;
-  color: #ffffff;
+  color: #333333;
   letter-spacing: 2rpx;
 }
 
@@ -253,8 +253,8 @@ onMounted(() => {
   margin-bottom: 30rpx;
   border-radius: 20rpx;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.03);
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.2);
+  background: #ffffff;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
   transition: transform 0.3s ease;
 }
 
@@ -297,7 +297,7 @@ onMounted(() => {
   display: block;
   font-size: 32rpx;
   font-weight: 600;
-  color: #ffffff;
+  color: #333333;
   margin-bottom: 16rpx;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -310,7 +310,7 @@ onMounted(() => {
   -webkit-line-clamp: 3;
   overflow: hidden;
   font-size: 26rpx;
-  color: rgba(255, 255, 255, 0.6);
+  color: #999999;
   line-height: 1.6;
   margin-bottom: 20rpx;
 }
@@ -322,7 +322,7 @@ onMounted(() => {
 
 .note-time {
   font-size: 22rpx;
-  color: rgba(255, 255, 255, 0.4);
+  color: #cccccc;
 }
 
 /* 取消收藏按钮 */
@@ -353,7 +353,7 @@ onMounted(() => {
 
 .loading-text {
   font-size: 28rpx;
-  color: rgba(255, 255, 255, 0.4);
+  color: #cccccc;
 }
 
 /* 空状态 */
@@ -373,13 +373,13 @@ onMounted(() => {
 
 .empty-text {
   font-size: 32rpx;
-  color: rgba(255, 255, 255, 0.5);
+  color: #999999;
   margin-bottom: 20rpx;
 }
 
 .empty-tip {
   font-size: 24rpx;
-  color: rgba(255, 255, 255, 0.3);
+  color: #cccccc;
   text-align: center;
 }
 

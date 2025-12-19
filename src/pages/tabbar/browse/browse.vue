@@ -129,10 +129,13 @@ const loadCategories = async (refresh = false) => {
 
     const list = res.data?.records || res.data?.list || res.data || []
 
+    // 过滤掉null或undefined的元素
+    const validList = list.filter(item => item != null)
+
     if (refresh) {
-      categories.value = list
+      categories.value = validList
     } else {
-      categories.value = [...categories.value, ...list]
+      categories.value = [...categories.value, ...validList]
     }
 
     // 判断是否还有更多
@@ -205,7 +208,7 @@ onMounted(() => {
 <style scoped>
 .browse-page {
   min-height: 100vh;
-  background: #121212;
+  background: #f5f5f5;
 }
 
 /* 自定义导航栏 */
@@ -217,20 +220,20 @@ onMounted(() => {
   height: 88rpx;
   padding-top: constant(safe-area-inset-top);
   padding-top: env(safe-area-inset-top);
-  background: rgba(26, 26, 26, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20rpx);
   -webkit-backdrop-filter: blur(20rpx);
   z-index: 999;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-bottom: 1rpx solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.08);
 }
 
 .navbar-title {
   font-size: 36rpx;
   font-weight: 600;
-  color: #ffffff;
+  color: #333333;
   letter-spacing: 2rpx;
 }
 
@@ -296,6 +299,7 @@ onMounted(() => {
   font-size: 40rpx;
   font-weight: 700;
   color: #ffffff;
+  text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.3);
   margin-bottom: 12rpx;
   letter-spacing: 1rpx;
 }
@@ -303,7 +307,8 @@ onMounted(() => {
 .category-desc {
   display: block;
   font-size: 26rpx;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 1rpx 4rpx rgba(0, 0, 0, 0.3);
   margin-bottom: 20rpx;
   line-height: 1.5;
   overflow: hidden;
@@ -326,16 +331,18 @@ onMounted(() => {
 
 .tag-item {
   padding: 8rpx 16rpx;
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.25);
   backdrop-filter: blur(10rpx);
   border-radius: 8rpx;
   font-size: 22rpx;
-  color: rgba(255, 255, 255, 0.9);
+  color: #ffffff;
+  text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.2);
 }
 
 .category-count {
   font-size: 24rpx;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.85);
+  text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.2);
   margin-left: 20rpx;
 }
 
@@ -347,7 +354,7 @@ onMounted(() => {
 
 .loading-text {
   font-size: 28rpx;
-  color: rgba(255, 255, 255, 0.4);
+  color: #999999;
 }
 
 /* 空状态 */
@@ -360,13 +367,13 @@ onMounted(() => {
 
 .empty-text {
   font-size: 32rpx;
-  color: rgba(255, 255, 255, 0.5);
+  color: #999999;
   margin-bottom: 20rpx;
 }
 
 .empty-tip {
   font-size: 24rpx;
-  color: rgba(255, 255, 255, 0.3);
+  color: #cccccc;
   text-align: center;
 }
 
@@ -420,7 +427,7 @@ onMounted(() => {
 
 .menu-container {
   width: 100%;
-  background: #1a1a1a;
+  background: #ffffff;
   border-radius: 32rpx 32rpx 0 0;
   padding: 40rpx 30rpx;
   padding-bottom: calc(40rpx + constant(safe-area-inset-bottom));
@@ -441,14 +448,14 @@ onMounted(() => {
   display: flex;
   align-items: center;
   padding: 32rpx 30rpx;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.03);
   border-radius: 16rpx;
   margin-bottom: 20rpx;
   transition: background 0.2s ease;
 }
 
 .menu-item:active {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.08);
 }
 
 .menu-icon {
@@ -458,7 +465,7 @@ onMounted(() => {
 
 .menu-text {
   font-size: 32rpx;
-  color: #ffffff;
+  color: #333333;
   font-weight: 500;
 }
 
@@ -466,13 +473,13 @@ onMounted(() => {
   margin-top: 20rpx;
   padding: 28rpx;
   text-align: center;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.03);
   border-radius: 16rpx;
   font-size: 32rpx;
-  color: rgba(255, 255, 255, 0.6);
+  color: #999999;
 }
 
 .menu-cancel:active {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.08);
 }
 </style>

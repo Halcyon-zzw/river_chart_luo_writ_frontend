@@ -370,7 +370,7 @@ const formatTime = (time) => {
   left: 0;
   right: 0;
   max-height: 60%;
-  background: rgba(26, 26, 26, 0.98);
+  background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(20rpx);
   border-radius: 32rpx 32rpx 0 0;
   transition: transform 0.3s ease;
@@ -393,7 +393,7 @@ const formatTime = (time) => {
 .info-indicator {
   width: 80rpx;
   height: 8rpx;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.1);
   border-radius: 4rpx;
 }
 
@@ -409,14 +409,14 @@ const formatTime = (time) => {
   display: block;
   font-size: 40rpx;
   font-weight: 700;
-  color: #ffffff;
+  color: #333333;
   margin-bottom: 20rpx;
 }
 
 .content-desc {
   display: block;
   font-size: 28rpx;
-  color: rgba(255, 255, 255, 0.7);
+  color: #666666;
   line-height: 1.6;
   margin-bottom: 24rpx;
 }
@@ -443,21 +443,21 @@ const formatTime = (time) => {
   gap: 16rpx;
   margin-bottom: 32rpx;
   padding: 24rpx;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 16rpx;
 }
 
 .meta-item {
   font-size: 26rpx;
-  color: rgba(255, 255, 255, 0.6);
+  color: #666666;
 }
 
 .meta-label {
-  color: rgba(255, 255, 255, 0.4);
+  color: #999999;
 }
 
 .meta-value {
-  color: rgba(255, 255, 255, 0.8);
+  color: #333333;
 }
 
 /* 操作按钮 */
@@ -479,12 +479,12 @@ const formatTime = (time) => {
 }
 
 .action-button.secondary {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  background: rgba(0, 0, 0, 0.08);
+  color: #333333;
 }
 
 .action-button.secondary:active {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.12);
 }
 
 .action-button.danger {
@@ -511,7 +511,7 @@ const formatTime = (time) => {
 
 .actions-container {
   width: 100%;
-  background: #1a1a1a;
+  background: #ffffff;
   border-radius: 32rpx 32rpx 0 0;
   padding: 40rpx 30rpx;
   padding-bottom: calc(40rpx + constant(safe-area-inset-bottom));
@@ -532,13 +532,13 @@ const formatTime = (time) => {
   display: flex;
   align-items: center;
   padding: 32rpx 30rpx;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.03);
   border-radius: 16rpx;
   margin-bottom: 20rpx;
 }
 
 .action-item:active {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.08);
 }
 
 .action-icon {
@@ -548,7 +548,7 @@ const formatTime = (time) => {
 
 .action-text {
   font-size: 32rpx;
-  color: #ffffff;
+  color: #333333;
   font-weight: 500;
 }
 
@@ -556,13 +556,13 @@ const formatTime = (time) => {
   margin-top: 20rpx;
   padding: 28rpx;
   text-align: center;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.03);
   border-radius: 16rpx;
   font-size: 32rpx;
-  color: rgba(255, 255, 255, 0.6);
+  color: #999999;
 }
 
 .action-cancel:active {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.08);
 }
 </style>

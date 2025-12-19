@@ -146,7 +146,7 @@ onMounted(() => {
 <style scoped>
 .profile-page {
   min-height: 100vh;
-  background: #121212;
+  background: #f5f5f5;
 }
 
 /* 自定义导航栏 */
@@ -158,20 +158,20 @@ onMounted(() => {
   height: 88rpx;
   padding-top: constant(safe-area-inset-top);
   padding-top: env(safe-area-inset-top);
-  background: rgba(26, 26, 26, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20rpx);
   -webkit-backdrop-filter: blur(20rpx);
   z-index: 999;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-bottom: 1rpx solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.08);
 }
 
 .navbar-title {
   font-size: 36rpx;
   font-weight: 600;
-  color: #ffffff;
+  color: #333333;
   letter-spacing: 2rpx;
 }
 
@@ -186,12 +186,12 @@ onMounted(() => {
 .user-card {
   margin: 40rpx 30rpx;
   padding: 60rpx 40rpx;
-  background: linear-gradient(135deg, rgba(0, 196, 179, 0.1) 0%, rgba(102, 126, 234, 0.1) 100%);
+  background: linear-gradient(135deg, rgba(0, 196, 179, 0.08) 0%, rgba(102, 126, 234, 0.08) 100%);
   border-radius: 24rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
-  border: 1rpx solid rgba(255, 255, 255, 0.05);
+  border: 1rpx solid rgba(0, 0, 0, 0.08);
 }
 
 .user-avatar {
@@ -225,19 +225,19 @@ onMounted(() => {
 .user-nickname {
   font-size: 36rpx;
   font-weight: 600;
-  color: #ffffff;
+  color: #333333;
   margin-bottom: 12rpx;
 }
 
 .user-id {
   font-size: 24rpx;
-  color: rgba(255, 255, 255, 0.5);
+  color: #999999;
 }
 
 /* 功能列表 */
 .menu-section {
   margin: 20rpx 30rpx;
-  background: rgba(255, 255, 255, 0.03);
+  background: #ffffff;
   border-radius: 20rpx;
   overflow: hidden;
 }
@@ -247,7 +247,7 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 36rpx 30rpx;
-  border-bottom: 1rpx solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.08);
   transition: background 0.2s ease;
 }
 
@@ -256,7 +256,7 @@ onMounted(() => {
 }
 
 .menu-item:active {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.03);
 }
 
 .menu-left {
@@ -271,7 +271,7 @@ onMounted(() => {
 
 .menu-text {
   font-size: 30rpx;
-  color: #ffffff;
+  color: #333333;
 }
 
 .menu-right {
@@ -281,13 +281,13 @@ onMounted(() => {
 
 .menu-info {
   font-size: 26rpx;
-  color: rgba(255, 255, 255, 0.5);
+  color: #999999;
   margin-right: 12rpx;
 }
 
 .menu-arrow {
   font-size: 48rpx;
-  color: rgba(255, 255, 255, 0.3);
+  color: #cccccc;
   font-weight: 300;
   line-height: 1;
 }
@@ -324,7 +324,7 @@ onMounted(() => {
 
 .version-text {
   font-size: 24rpx;
-  color: rgba(255, 255, 255, 0.3);
+  color: #cccccc;
 }
 
 /* 底部占位 */

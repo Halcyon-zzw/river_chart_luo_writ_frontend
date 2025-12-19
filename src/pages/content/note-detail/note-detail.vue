@@ -155,7 +155,7 @@ const formatTime = (time) => {
 <style scoped>
 .note-detail-page {
   min-height: 100vh;
-  background: #121212;
+  background: #f5f5f5;
   padding-bottom: calc(120rpx + constant(safe-area-inset-bottom));
   padding-bottom: calc(120rpx + env(safe-area-inset-bottom));
 }
@@ -168,14 +168,14 @@ const formatTime = (time) => {
 /* 笔记头部 */
 .note-header {
   padding: 40rpx 40rpx 30rpx;
-  border-bottom: 1rpx solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.08);
 }
 
 .note-title {
   display: block;
   font-size: 48rpx;
   font-weight: 700;
-  color: #ffffff;
+  color: #333333;
   line-height: 1.4;
   margin-bottom: 24rpx;
 }
@@ -188,7 +188,7 @@ const formatTime = (time) => {
 
 .meta-text {
   font-size: 24rpx;
-  color: rgba(255, 255, 255, 0.5);
+  color: #999999;
 }
 
 .note-tags {
@@ -211,7 +211,7 @@ const formatTime = (time) => {
   padding: 40rpx;
   font-size: 30rpx;
   line-height: 1.8;
-  color: rgba(255, 255, 255, 0.85);
+  color: #333333;
 }
 
 /* 底部占位 */
@@ -228,9 +228,9 @@ const formatTime = (time) => {
   height: 120rpx;
   padding-bottom: constant(safe-area-inset-bottom);
   padding-bottom: env(safe-area-inset-bottom);
-  background: rgba(26, 26, 26, 0.98);
+  background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(20rpx);
-  border-top: 1rpx solid rgba(255, 255, 255, 0.05);
+  border-top: 1rpx solid rgba(0, 0, 0, 0.08);
   display: flex;
   align-items: center;
   justify-content: space-around;
@@ -256,6 +256,6 @@ const formatTime = (time) => {
 
 .toolbar-text {
   font-size: 22rpx;
-  color: rgba(255, 255, 255, 0.7);
+  color: #666666;
 }
 </style>

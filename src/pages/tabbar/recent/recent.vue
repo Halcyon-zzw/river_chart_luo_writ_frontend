@@ -32,7 +32,7 @@ onLoad()
 <style scoped>
 .recent-page {
   min-height: 100vh;
-  background: linear-gradient(180deg, #1a1a1a 0%, #121212 100%);
+  background: #f5f5f5;
 }
 
 /* 自定义导航栏 */
@@ -44,20 +44,20 @@ onLoad()
   height: 88rpx;
   padding-top: constant(safe-area-inset-top);
   padding-top: env(safe-area-inset-top);
-  background: rgba(26, 26, 26, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20rpx);
   -webkit-backdrop-filter: blur(20rpx);
   z-index: 999;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-bottom: 1rpx solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.08);
 }
 
 .navbar-title {
   font-size: 36rpx;
   font-weight: 600;
-  color: #ffffff;
+  color: #333333;
   letter-spacing: 2rpx;
 }
 
@@ -83,7 +83,7 @@ onLoad()
 
 .empty-text {
   font-size: 32rpx;
-  color: rgba(255, 255, 255, 0.7);
+  color: #666666;
   margin-bottom: 20rpx;
   text-align: center;
   line-height: 1.6;
@@ -91,7 +91,7 @@ onLoad()
 
 .empty-tip {
   font-size: 24rpx;
-  color: rgba(255, 255, 255, 0.4);
+  color: #999999;
   text-align: center;
 }
 </style>

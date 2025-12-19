@@ -293,7 +293,7 @@ const formatTime = (time) => {
 <style scoped>
 .content-list-page {
   min-height: 100vh;
-  background: #121212;
+  background: #f5f5f5;
 }
 
 /* Tab栏 */
@@ -305,13 +305,13 @@ const formatTime = (time) => {
   height: 88rpx;
   padding-top: constant(safe-area-inset-top);
   padding-top: env(safe-area-inset-top);
-  background: rgba(26, 26, 26, 0.95);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20rpx);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 999;
-  border-bottom: 1rpx solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.08);
 }
 
 .tab-item {
@@ -324,7 +324,7 @@ const formatTime = (time) => {
 
 .tab-text {
   font-size: 30rpx;
-  color: rgba(255, 255, 255, 0.5);
+  color: #999999;
   font-weight: 500;
   transition: all 0.3s ease;
 }
@@ -371,8 +371,8 @@ const formatTime = (time) => {
   margin-bottom: 20rpx;
   border-radius: 16rpx;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.03);
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.2);
+  background: #ffffff;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
   transition: transform 0.3s ease;
 }
 
@@ -392,7 +392,7 @@ const formatTime = (time) => {
 .waterfall-title {
   display: block;
   font-size: 26rpx;
-  color: rgba(255, 255, 255, 0.9);
+  color: #333333;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -406,9 +406,9 @@ const formatTime = (time) => {
 .note-card {
   margin-bottom: 24rpx;
   padding: 32rpx;
-  background: rgba(255, 255, 255, 0.03);
+  background: #ffffff;
   border-radius: 20rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
   transition: transform 0.3s ease;
 }
 
@@ -420,7 +420,7 @@ const formatTime = (time) => {
   display: block;
   font-size: 32rpx;
   font-weight: 600;
-  color: #ffffff;
+  color: #333333;
   margin-bottom: 16rpx;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -433,7 +433,7 @@ const formatTime = (time) => {
   -webkit-line-clamp: 3;
   overflow: hidden;
   font-size: 26rpx;
-  color: rgba(255, 255, 255, 0.6);
+  color: #999999;
   line-height: 1.6;
   margin-bottom: 20rpx;
 }
@@ -460,7 +460,7 @@ const formatTime = (time) => {
 
 .note-time {
   font-size: 22rpx;
-  color: rgba(255, 255, 255, 0.4);
+  color: #cccccc;
   margin-left: 16rpx;
 }
 
@@ -472,7 +472,7 @@ const formatTime = (time) => {
 
 .loading-text {
   font-size: 28rpx;
-  color: rgba(255, 255, 255, 0.4);
+  color: #999999;
 }
 
 /* 没有更多 */
@@ -483,7 +483,7 @@ const formatTime = (time) => {
 
 .no-more-text {
   font-size: 24rpx;
-  color: rgba(255, 255, 255, 0.3);
+  color: #cccccc;
 }
 
 /* 空状态 */
@@ -496,13 +496,13 @@ const formatTime = (time) => {
 
 .empty-text {
   font-size: 32rpx;
-  color: rgba(255, 255, 255, 0.5);
+  color: #999999;
   margin-bottom: 20rpx;
 }
 
 .empty-tip {
   font-size: 24rpx;
-  color: rgba(255, 255, 255, 0.3);
+  color: #cccccc;
 }
 
 /* 底部占位 */

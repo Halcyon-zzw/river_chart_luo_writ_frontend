@@ -205,7 +205,7 @@ const createNote = () => {
 <style scoped>
 .sub-list-page {
   min-height: 100vh;
-  background: #121212;
+  background: #f5f5f5;
 }
 
 /* 滚动容器 */
@@ -269,17 +269,19 @@ const createNote = () => {
   font-weight: 700;
   color: #ffffff;
   margin-bottom: 10rpx;
+  text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.3);
 }
 
 .sub-desc {
   display: block;
   font-size: 24rpx;
-  color: rgba(255, 255, 255, 0.75);
+  color: #ffffff;
   margin-bottom: 16rpx;
   line-height: 1.4;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  text-shadow: 0 1rpx 3rpx rgba(0, 0, 0, 0.3);
 }
 
 .sub-footer {
@@ -296,16 +298,16 @@ const createNote = () => {
 
 .tag-item {
   padding: 6rpx 14rpx;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.25);
   backdrop-filter: blur(8rpx);
   border-radius: 6rpx;
   font-size: 20rpx;
-  color: rgba(255, 255, 255, 0.95);
+  color: #ffffff;
 }
 
 .sub-count {
   font-size: 22rpx;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.7);
   margin-left: 16rpx;
 }
 
@@ -317,7 +319,7 @@ const createNote = () => {
 
 .loading-text {
   font-size: 28rpx;
-  color: rgba(255, 255, 255, 0.4);
+  color: #999999;
 }
 
 /* 空状态 */
@@ -328,7 +330,7 @@ const createNote = () => {
 
 .empty-text {
   font-size: 32rpx;
-  color: rgba(255, 255, 255, 0.5);
+  color: #999999;
 }
 
 /* 底部占位 */
@@ -381,7 +383,7 @@ const createNote = () => {
 
 .menu-container {
   width: 100%;
-  background: #1a1a1a;
+  background: #ffffff;
   border-radius: 32rpx 32rpx 0 0;
   padding: 40rpx 30rpx;
   padding-bottom: calc(40rpx + constant(safe-area-inset-bottom));
@@ -402,13 +404,13 @@ const createNote = () => {
   display: flex;
   align-items: center;
   padding: 32rpx 30rpx;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.03);
   border-radius: 16rpx;
   margin-bottom: 20rpx;
 }
 
 .menu-item:active {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.08);
 }
 
 .menu-icon {
@@ -418,7 +420,7 @@ const createNote = () => {
 
 .menu-text {
   font-size: 32rpx;
-  color: #ffffff;
+  color: #333333;
   font-weight: 500;
 }
 
@@ -426,13 +428,13 @@ const createNote = () => {
   margin-top: 20rpx;
   padding: 28rpx;
   text-align: center;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.03);
   border-radius: 16rpx;
   font-size: 32rpx;
-  color: rgba(255, 255, 255, 0.6);
+  color: #999999;
 }
 
 .menu-cancel:active {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.08);
 }
 </style>

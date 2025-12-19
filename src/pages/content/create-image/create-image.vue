@@ -366,7 +366,7 @@ const submit = async () => {
 <style scoped>
 .create-image-page {
   min-height: 100vh;
-  background: #121212;
+  background: #f5f5f5;
   padding-bottom: calc(120rpx + constant(safe-area-inset-bottom));
   padding-bottom: calc(120rpx + env(safe-area-inset-bottom));
 }
@@ -392,7 +392,7 @@ const submit = async () => {
   padding-bottom: 100%;
   border-radius: 16rpx;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.03);
+  background: #ffffff;
 }
 
 .upload-image {
@@ -443,8 +443,8 @@ const submit = async () => {
   width: 100%;
   padding-bottom: 100%;
   border-radius: 16rpx;
-  border: 2rpx dashed rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.02);
+  border: 2rpx dashed rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.02);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -455,7 +455,7 @@ const submit = async () => {
   position: absolute;
   top: 35%;
   font-size: 64rpx;
-  color: rgba(255, 255, 255, 0.3);
+  color: #cccccc;
   font-weight: 200;
 }
 
@@ -463,14 +463,14 @@ const submit = async () => {
   position: absolute;
   top: 55%;
   font-size: 24rpx;
-  color: rgba(255, 255, 255, 0.5);
+  color: #999999;
 }
 
 .upload-tip {
   position: absolute;
   top: 68%;
   font-size: 20rpx;
-  color: rgba(255, 255, 255, 0.3);
+  color: #cccccc;
 }
 
 /* 表单区域 */
@@ -485,7 +485,7 @@ const submit = async () => {
 .form-label {
   display: block;
   font-size: 28rpx;
-  color: rgba(255, 255, 255, 0.9);
+  color: #333333;
   margin-bottom: 20rpx;
   font-weight: 500;
 }
@@ -494,11 +494,11 @@ const submit = async () => {
 .form-textarea {
   width: 100%;
   padding: 24rpx 28rpx;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1rpx solid rgba(255, 255, 255, 0.1);
+  background: #ffffff;
+  border: 1rpx solid rgba(0, 0, 0, 0.08);
   border-radius: 12rpx;
   font-size: 28rpx;
-  color: #ffffff;
+  color: #333333;
 }
 
 .form-textarea {
@@ -506,7 +506,7 @@ const submit = async () => {
 }
 
 .input-placeholder {
-  color: rgba(255, 255, 255, 0.3);
+  color: #cccccc;
 }
 
 .form-selector {
@@ -514,23 +514,23 @@ const submit = async () => {
   align-items: center;
   justify-content: space-between;
   padding: 24rpx 28rpx;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1rpx solid rgba(255, 255, 255, 0.1);
+  background: #ffffff;
+  border: 1rpx solid rgba(0, 0, 0, 0.08);
   border-radius: 12rpx;
 }
 
 .selector-text {
   font-size: 28rpx;
-  color: #ffffff;
+  color: #333333;
 }
 
 .selector-text.placeholder {
-  color: rgba(255, 255, 255, 0.3);
+  color: #cccccc;
 }
 
 .selector-arrow {
   font-size: 48rpx;
-  color: rgba(255, 255, 255, 0.3);
+  color: #cccccc;
   font-weight: 200;
 }
 
@@ -564,11 +564,11 @@ const submit = async () => {
 
 .add-tag-btn {
   padding: 12rpx 20rpx;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1rpx dashed rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.03);
+  border: 1rpx dashed rgba(0, 0, 0, 0.1);
   border-radius: 8rpx;
   font-size: 24rpx;
-  color: rgba(255, 255, 255, 0.5);
+  color: #999999;
 }
 
 /* 底部占位 */
@@ -587,9 +587,9 @@ const submit = async () => {
   padding: 24rpx 30rpx;
   padding-bottom: calc(24rpx + constant(safe-area-inset-bottom));
   padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
-  background: rgba(26, 26, 26, 0.98);
+  background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(20rpx);
-  border-top: 1rpx solid rgba(255, 255, 255, 0.05);
+  border-top: 1rpx solid rgba(0, 0, 0, 0.08);
   z-index: 100;
 }
 
@@ -606,12 +606,12 @@ const submit = async () => {
 }
 
 .action-btn.cancel {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  background: rgba(0, 0, 0, 0.08);
+  color: #333333;
 }
 
 .action-btn.cancel:active {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.12);
 }
 
 .action-btn.submit {
