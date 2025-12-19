@@ -79,7 +79,6 @@
 		"selectedColor": "#00c4b3",
 		"backgroundColor": "rgba(26, 26, 26, 0.95)",
 		"borderStyle": "black",
-		"blurEffect": "dark",
 		"list": [
 			{
 				"pagePath": "pages/tabbar/recent/recent",

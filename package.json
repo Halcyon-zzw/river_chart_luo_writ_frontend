@@ -66,6 +66,7 @@
     "@dcloudio/uni-stacktracey": "3.0.0-4080720251210001",
     "@dcloudio/vite-plugin-uni": "3.0.0-4080720251210001",
     "@vue/runtime-core": "^3.4.21",
+    "nodemon": "^3.1.11",
     "vite": "5.2.8"
   }
 }

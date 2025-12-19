@@ -67,3 +67,37 @@
 
   你选择哪种？
   方案C，通过/user/login获取用户id
+
+
+  1. 登录接口不存在
+
+  我查看了后端所有接口，没有找到 /user/login 
+  已更新接口
+
+  你选择哪个方案？
+
+  2. 批量上传图片接口不存在
+  已更新接口
+  - 是先上传文件到服务器获取URL，再调用 /content/create 创建内容记录？
+  - 还是 /content/create 接口直接支持文件上传（multipart/form-data）?
+  前者
+
+  3. 数据模型字段确认
+
+  你提到：
+  - 子分类关联主分类的字段名是
+  noteContent（这个看起来像是内容字段，不像是关联字段）
+
+  请确认：
+  - 子分类表（sub_categories）中关联主分类的字段应该是什么？（通常应该是
+  mainCategoryId
+
+  4. 内容查询接口参数
+
+  GET /content/page 接口支持哪些查询参数？
+  - 是否支持按 sub_category_id 筛选？
+  支持，点击子分类时传sub_category_id
+  - 是否支持按 content_type（image/note）筛选？
+  支持，默认image，通过顶部tab切换
+  - 分页参数是什么？（pageNum、pageSize 还是 page、size？）
+  前者

@@ -1,0 +1,6 @@
+{
+  "watch": ["src"],
+  "ext": "vue,js,ts,json,css,scss",
+  "ignore": ["src/unpackage/**", "node_modules"],
+  "exec": "npm run dev:mp-weixin"
+}
