@@ -5,7 +5,7 @@ export const categoryApi = {
   // ========== 主分类 ==========
   // 分页查询主分类列表
   getMainCategories(params) {
-    return http.get('/main-category/page', params)
+    return http.post('/main-category/page', params)
   },
 
   // 获取主分类详情
@@ -30,13 +30,13 @@ export const categoryApi = {
 
   // 获取主分类关联的标签
   getMainCategoryTags(id) {
-    return http.get(`/main-category/${id}/tags`)
+    return http.post(`/main-category/${id}/tags`)
   },
 
   // ========== 子分类 ==========
   // 分页查询子分类列表
   getSubCategories(params) {
-    return http.get('/sub-category/page', params)
+    return http.post('/sub-category/page', params)
   },
 
   // 获取子分类详情
@@ -61,7 +61,7 @@ export const categoryApi = {
 
   // 获取子分类关联的标签
   getSubCategoryTags(id) {
-    return http.get(`/sub-category/${id}/tags`)
+    return http.post(`/sub-category/${id}/tags`)
   }
 }
 

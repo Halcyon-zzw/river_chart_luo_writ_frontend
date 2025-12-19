@@ -2,9 +2,9 @@ import http from './request'
 
 // 内容相关API
 export const contentApi = {
-  // 分页查询内容列表
+  // 分页查询内容列表（必须传subCategoryId）
   getContentList(params) {
-    return http.get('/content/page', params)
+    return http.post('/content/page', params)
   },
 
   // 获取内容详情
@@ -38,7 +38,7 @@ export const contentApi = {
 
   // 获取内容关联的标签
   getContentTags(id) {
-    return http.get(`/content/${id}/tags`)
+    return http.post(`/content/${id}/tags`)
   }
 }
 

@@ -21,7 +21,21 @@ export const useCategoryStore = defineStore('category', {
           pageSize: 100 // 加载所有主分类
         })
 
-        this.mainCategories = res.data?.records || res.data || res.records || []
+        // 确保返回数组
+        let categories = []
+        if (res.data?.records && Array.isArray(res.data.records)) {
+          categories = res.data.records
+        } else if (res.data?.list && Array.isArray(res.data.list)) {
+          categories = res.data.list
+        } else if (Array.isArray(res.data)) {
+          categories = res.data
+        } else if (Array.isArray(res.records)) {
+          categories = res.records
+        } else if (Array.isArray(res)) {
+          categories = res
+        }
+
+        this.mainCategories = categories.filter(item => item != null)
         return this.mainCategories
       } catch (error) {
         console.error('Load main categories error:', error)

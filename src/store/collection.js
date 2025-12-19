@@ -16,23 +16,42 @@ export const useCollectionStore = defineStore('collection', {
   },
 
   actions: {
-    // 加载用户收藏列表
-    async loadCollections() {
+    // 加载用户收藏列表（可选指定内容类型）
+    async loadCollections(contentType = null) {
       const userStore = useUserStore()
       if (!userStore.userId) return
 
       try {
-        const res = await collectionApi.getCollectionList({
+        const params = {
           userId: userStore.userId,
           pageNum: 1,
           pageSize: 1000 // 加载所有收藏
-        })
+        }
 
-        const collections = res.data?.records || res.data || res.records || []
+        // 如果指定了内容类型，添加到参数中
+        if (contentType) {
+          params.contentType = contentType
+        }
+
+        const res = await collectionApi.getCollectionList(params)
+
+        // 确保collections是数组
+        let collections = []
+        if (res.data?.records && Array.isArray(res.data.records)) {
+          collections = res.data.records
+        } else if (res.data?.list && Array.isArray(res.data.list)) {
+          collections = res.data.list
+        } else if (Array.isArray(res.data)) {
+          collections = res.data
+        } else if (Array.isArray(res.records)) {
+          collections = res.records
+        } else if (Array.isArray(res)) {
+          collections = res
+        }
 
         // 提取内容ID
         this.collectedContentIds = new Set(
-          collections.map(item => item.contentId)
+          collections.filter(item => item && item.contentId).map(item => item.contentId)
         )
 
         return collections

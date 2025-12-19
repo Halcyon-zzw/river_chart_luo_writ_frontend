@@ -39,7 +39,7 @@ const responseInterceptor = (response, options) => {
       icon: 'none',
       duration: 2000
     })
-    return Promise.reject(response)
+    throw new Error(`HTTP ${statusCode}`)
   }
 
   // 业务状态码判断（根据后端实际返回结构调整）
@@ -49,7 +49,7 @@ const responseInterceptor = (response, options) => {
       icon: 'none',
       duration: 2000
     })
-    return Promise.reject(data)
+    throw new Error(data.message || '操作失败')
   }
 
   return data
@@ -102,12 +102,16 @@ const request = (options) => {
     uni.request({
       ...options,
       success: (res) => {
-        responseInterceptor(res, options)
-          .then(resolve)
-          .catch(reject)
+        try {
+          const result = responseInterceptor(res, options)
+          resolve(result)
+        } catch (error) {
+          reject(error)
+        }
       },
       fail: (err) => {
-        errorHandler(err, options).catch(reject)
+        errorHandler(err, options)
+        reject(err)
       }
     })
   })

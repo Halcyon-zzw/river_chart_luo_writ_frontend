@@ -4,7 +4,7 @@ import http from './request'
 export const collectionApi = {
   // 分页查询收藏列表
   getCollectionList(params) {
-    return http.get('/user-collection/page', params)
+    return http.post('/user-collection/page', params)
   },
 
   // 获取收藏详情

@@ -67,18 +67,18 @@
 		}
 	],
 	"globalStyle": {
-		"navigationBarTextStyle": "white",
+		"navigationBarTextStyle": "black",
 		"navigationBarTitleText": "河图洛书",
-		"navigationBarBackgroundColor": "#1a1a1a",
-		"backgroundColor": "#121212",
-		"backgroundColorTop": "#121212",
-		"backgroundColorBottom": "#121212"
+		"navigationBarBackgroundColor": "#ffffff",
+		"backgroundColor": "#f5f5f5",
+		"backgroundColorTop": "#f5f5f5",
+		"backgroundColorBottom": "#f5f5f5"
 	},
 	"tabBar": {
-		"color": "#8f8f94",
+		"color": "#999999",
 		"selectedColor": "#00c4b3",
-		"backgroundColor": "rgba(26, 26, 26, 0.95)",
-		"borderStyle": "black",
+		"backgroundColor": "#ffffff",
+		"borderStyle": "white",
 		"list": [
 			{
 				"pagePath": "pages/tabbar/recent/recent",
