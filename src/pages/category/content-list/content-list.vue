@@ -1,5 +1,13 @@
 <template>
   <view class="content-list-page">
+    <!-- 分类标签 -->
+    <view class="category-label-container">
+      <view class="category-breadcrumb">
+        <text class="main-category-name">{{ mainCategoryName }}</text>
+        <text class="sub-category-name">{{ subCategoryName }}</text>
+      </view>
+    </view>
+
     <!-- Tab切换 -->
     <view class="tab-bar">
       <view
@@ -120,9 +128,12 @@
 import { ref, computed, watch } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { contentApi } from '@/api'
+import { useCategoryStore } from '@/store/category'
 
 // 数据
 const subCategoryId = ref('')
+const mainCategoryName = ref('')
+const subCategoryName = ref('')
 const currentTab = ref('image')
 const contents = ref([])
 const loading = ref(false)
@@ -150,6 +161,16 @@ const noteContents = computed(() => {
 // 页面加载
 onLoad((options) => {
   subCategoryId.value = options.subCategoryId
+
+  // 从store获取分类名称
+  const categoryStore = useCategoryStore()
+  if (categoryStore.currentMainCategory) {
+    mainCategoryName.value = categoryStore.currentMainCategory.name || ''
+  }
+  if (categoryStore.currentSubCategory) {
+    subCategoryName.value = categoryStore.currentSubCategory.name || ''
+  }
+
   loadContents(true)
 })
 
@@ -309,21 +330,54 @@ const formatTime = (time) => {
   background: #f5f5f5;
 }
 
-/* Tab栏 */
-.tab-bar {
+/* 分类标签 */
+.category-label-container {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
+  padding: 24rpx 30rpx 20rpx;
+  padding-top: calc(24rpx + constant(safe-area-inset-top));
+  padding-top: calc(24rpx + env(safe-area-inset-top));
+  background: #ffffff;
+  z-index: 100;
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.05);
+}
+
+.category-breadcrumb {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.main-category-name {
+  font-size: 32rpx;
+  color: #333333;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.sub-category-name {
+  font-size: 24rpx;
+  color: #999999;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+/* Tab栏 */
+.tab-bar {
+  position: fixed;
+  top: calc(100rpx + constant(safe-area-inset-top));
+  top: calc(100rpx + env(safe-area-inset-top));
+  left: 0;
+  right: 0;
   height: 88rpx;
-  padding-top: constant(safe-area-inset-top);
-  padding-top: env(safe-area-inset-top);
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20rpx);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 999;
+  z-index: 99;
   border-bottom: 1rpx solid rgba(0, 0, 0, 0.08);
 }
 
@@ -363,8 +417,8 @@ const formatTime = (time) => {
 /* 滚动容器 */
 .content-scroll {
   height: 100vh;
-  padding-top: calc(88rpx + constant(safe-area-inset-top));
-  padding-top: calc(88rpx + env(safe-area-inset-top));
+  padding-top: calc(188rpx + constant(safe-area-inset-top));
+  padding-top: calc(188rpx + env(safe-area-inset-top));
 }
 
 /* 瀑布流 */

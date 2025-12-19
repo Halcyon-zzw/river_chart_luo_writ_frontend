@@ -1,5 +1,24 @@
 <template>
   <view class="sub-list-page">
+    <!-- 分类标签 -->
+    <view class="category-label-container">
+      <text class="category-label">{{ mainCategoryName }}</text>
+    </view>
+
+    <!-- Tab切换 -->
+    <view class="tab-bar">
+      <view
+        v-for="tab in tabs"
+        :key="tab.type"
+        class="tab-item"
+        :class="{ active: currentTab === tab.type }"
+        @click="switchTab(tab.type)"
+      >
+        <text class="tab-text">{{ tab.label }}</text>
+      </view>
+      <view class="tab-indicator" :style="{ left: currentTab === 'image' ? '25%' : '75%' }"></view>
+    </view>
+
     <!-- 子分类列表 -->
     <scroll-view class="sub-scroll" scroll-y @scrolltolower="onLoadMore">
       <view class="sub-container">
@@ -68,13 +87,13 @@
     <!-- 创建菜单弹窗 -->
     <view v-if="showMenu" class="menu-mask" @click="hideCreateMenu">
       <view class="menu-container" @click.stop>
-        <view class="menu-item" @click="createImage">
-          <text class="menu-icon">🖼️</text>
-          <text class="menu-text">新建图片</text>
+        <view class="menu-item" @click="createSubCategory">
+          <text class="menu-icon">📁</text>
+          <text class="menu-text">新建子分类</text>
         </view>
-        <view class="menu-item" @click="createNote">
-          <text class="menu-icon">📝</text>
-          <text class="menu-text">新建文本</text>
+        <view class="menu-item" @click="quickCreate">
+          <text class="menu-icon">{{ currentTab === 'image' ? '🖼️' : '📝' }}</text>
+          <text class="menu-text">新建{{ currentTab === 'image' ? '图片' : '文本' }}</text>
         </view>
         <view class="menu-cancel" @click="hideCreateMenu">
           <text>取消</text>
@@ -94,17 +113,38 @@ const categoryStore = useCategoryStore()
 
 // 数据
 const mainCategoryId = ref('')
+const mainCategoryName = ref('子分类')
+const currentTab = ref('image')
 const subCategories = ref([])
 const loading = ref(false)
 const showMenu = ref(false)
 const currentPage = ref(1)
 const hasMore = ref(true)
 
+// Tab配置
+const tabs = [
+  { type: 'image', label: '图片' },
+  { type: 'note', label: '文本' }
+]
+
 // 页面加载参数
 onLoad((options) => {
   mainCategoryId.value = options.mainCategoryId
+
+  // 从store获取主分类名称
+  if (categoryStore.currentMainCategory) {
+    mainCategoryName.value = categoryStore.currentMainCategory.name || '子分类'
+  }
+
   loadSubCategories(true)
 })
+
+// 切换Tab
+const switchTab = (type) => {
+  if (currentTab.value === type) return
+  currentTab.value = type
+  // Tab切换时可以添加筛选逻辑，暂时保持显示所有子分类
+}
 
 // 加载子分类列表
 const loadSubCategories = async (refresh = false) => {
@@ -181,23 +221,24 @@ const hideCreateMenu = () => {
   showMenu.value = false
 }
 
-// 创建图片
-const createImage = () => {
+// 创建子分类
+const createSubCategory = () => {
   hideCreateMenu()
   if (!mainCategoryId.value) {
     uni.showToast({
-      title: '请先选择分类',
+      title: '请先选择主分类',
       icon: 'none'
     })
     return
   }
+
   uni.navigateTo({
-    url: `/pages/content/create-image/create-image?mainCategoryId=${mainCategoryId.value}`
+    url: `/pages/category/create-sub-category/create-sub-category?mainCategoryId=${mainCategoryId.value}`
   })
 }
 
-// 创建文本
-const createNote = () => {
+// 快速创建（根据当前tab）
+const quickCreate = () => {
   hideCreateMenu()
   if (!mainCategoryId.value) {
     uni.showToast({
@@ -206,9 +247,12 @@ const createNote = () => {
     })
     return
   }
-  uni.navigateTo({
-    url: `/pages/content/create-note/create-note?mainCategoryId=${mainCategoryId.value}`
-  })
+
+  const url = currentTab.value === 'image'
+    ? `/pages/content/create-image/create-image?mainCategoryId=${mainCategoryId.value}`
+    : `/pages/content/create-note/create-note?mainCategoryId=${mainCategoryId.value}`
+
+  uni.navigateTo({ url })
 }
 </script>
 
@@ -218,9 +262,82 @@ const createNote = () => {
   background: #f5f5f5;
 }
 
+/* 分类标签 */
+.category-label-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 88rpx;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  padding: 0 30rpx;
+  z-index: 99;
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.08);
+}
+
+.category-label {
+  font-size: 32rpx;
+  color: #333333;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+/* Tab切换 */
+.tab-bar {
+  position: fixed;
+  top: 88rpx;
+  left: 0;
+  right: 0;
+  height: 88rpx;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  z-index: 98;
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.05);
+}
+
+.tab-item {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.tab-text {
+  font-size: 28rpx;
+  color: #999999;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.tab-item.active .tab-text {
+  color: #00c4b3;
+  font-weight: 600;
+}
+
+.tab-indicator {
+  position: absolute;
+  bottom: 0;
+  width: 50%;
+  height: 6rpx;
+  background: #00c4b3;
+  border-radius: 3rpx 3rpx 0 0;
+  transition: left 0.3s ease;
+  transform: translateX(-50%);
+}
+
 /* 滚动容器 */
 .sub-scroll {
   height: 100vh;
+  padding-top: 176rpx;
 }
 
 .sub-container {

@@ -5,6 +5,11 @@
       <view class="navbar-title">浏览</view>
     </view>
 
+    <!-- 分类标签 -->
+    <view class="category-label-container">
+      <text class="category-label">主分类</text>
+    </view>
+
     <!-- 主分类列表 -->
     <scroll-view
       class="category-scroll"
@@ -71,25 +76,8 @@
     </scroll-view>
 
     <!-- 悬浮创建按钮 -->
-    <view class="fab-button" @click="showCreateMenu">
+    <view class="fab-button" @click="createMainCategory">
       <text class="fab-icon">+</text>
-    </view>
-
-    <!-- 创建菜单弹窗 -->
-    <view v-if="showMenu" class="menu-mask" @click="hideCreateMenu">
-      <view class="menu-container" @click.stop>
-        <view class="menu-item" @click="createCategory">
-          <text class="menu-icon">📁</text>
-          <text class="menu-text">新建分类</text>
-        </view>
-        <view class="menu-item" @click="createContent">
-          <text class="menu-icon">📝</text>
-          <text class="menu-text">快速创建</text>
-        </view>
-        <view class="menu-cancel" @click="hideCreateMenu">
-          <text>取消</text>
-        </view>
-      </view>
     </view>
   </view>
 </template>
@@ -104,7 +92,6 @@ const categoryStore = useCategoryStore()
 // 数据
 const categories = ref([])
 const loading = ref(false)
-const showMenu = ref(false)
 const currentPage = ref(1)
 const hasMore = ref(true)
 
@@ -181,31 +168,10 @@ const goToSubCategory = (category) => {
   })
 }
 
-// 显示创建菜单
-const showCreateMenu = () => {
-  showMenu.value = true
-}
-
-// 隐藏创建菜单
-const hideCreateMenu = () => {
-  showMenu.value = false
-}
-
-// 创建分类
-const createCategory = () => {
-  hideCreateMenu()
-  uni.showToast({
-    title: '创建分类功能开发中',
-    icon: 'none'
-  })
-}
-
-// 快速创建内容
-const createContent = () => {
-  hideCreateMenu()
-  uni.showToast({
-    title: '请先选择分类',
-    icon: 'none'
+// 创建主分类
+const createMainCategory = () => {
+  uni.navigateTo({
+    url: '/pages/category/create-main-category/create-main-category'
   })
 }
 
@@ -247,11 +213,33 @@ onMounted(() => {
   letter-spacing: 2rpx;
 }
 
+/* 分类标签 */
+.category-label-container {
+  position: fixed;
+  top: calc(88rpx + constant(safe-area-inset-top));
+  top: calc(88rpx + env(safe-area-inset-top));
+  left: 0;
+  right: 0;
+  height: 88rpx;
+  background: #f5f5f5;
+  display: flex;
+  align-items: center;
+  padding: 0 30rpx;
+  z-index: 99;
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.05);
+}
+
+.category-label {
+  font-size: 28rpx;
+  color: #666666;
+  font-weight: 500;
+}
+
 /* 滚动容器 */
 .category-scroll {
   height: 100vh;
-  padding-top: calc(88rpx + constant(safe-area-inset-top));
-  padding-top: calc(88rpx + env(safe-area-inset-top));
+  padding-top: calc(176rpx + constant(safe-area-inset-top));
+  padding-top: calc(176rpx + env(safe-area-inset-top));
 }
 
 .category-container {

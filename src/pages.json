@@ -64,6 +64,18 @@
 			"style": {
 				"navigationBarTitleText": "创建笔记"
 			}
+		},
+		{
+			"path": "pages/category/create-main-category/create-main-category",
+			"style": {
+				"navigationBarTitleText": "新建主分类"
+			}
+		},
+		{
+			"path": "pages/category/create-sub-category/create-sub-category",
+			"style": {
+				"navigationBarTitleText": "新建子分类"
+			}
 		}
 	],
 	"globalStyle": {
