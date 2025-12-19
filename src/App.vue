@@ -80,23 +80,15 @@ const getDeviceId = () => {
 page {
   background-color: #121212;
   color: #ffffff;
-}
-
-/* 滚动条样式 */
-::-webkit-scrollbar {
-  width: 0;
-  height: 0;
-  background: transparent;
-}
-
-/* 全局字体 */
-* {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
     'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
 /* 禁用默认的点击高亮 */
-* {
+view,
+text,
+button,
+image {
   -webkit-tap-highlight-color: transparent;
 }
 </style>
