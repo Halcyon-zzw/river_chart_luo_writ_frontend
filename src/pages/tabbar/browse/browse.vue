@@ -95,6 +95,7 @@ const categories = ref([])
 const loading = ref(false)
 const currentPage = ref(1)
 const hasMore = ref(true)
+let isFirstLoad = true
 
 // 加载主分类列表
 const loadCategories = async (refresh = false) => {
@@ -167,6 +168,14 @@ const createMainCategory = () => {
 
 // 页面显示时加载（TabBar页面使用onShow）
 onShow(() => {
+  // 首次加载
+  if (isFirstLoad) {
+    isFirstLoad = false
+    loadCategories(true)
+    return
+  }
+
+  // 从其他页面返回时刷新
   loadCategories(true)
 })
 
