@@ -35,19 +35,8 @@ export const useCollectionStore = defineStore('collection', {
 
         const res = await collectionApi.getCollectionList(params)
 
-        // 确保collections是数组
-        let collections = []
-        if (res.data?.records && Array.isArray(res.data.records)) {
-          collections = res.data.records
-        } else if (res.data?.list && Array.isArray(res.data.list)) {
-          collections = res.data.list
-        } else if (Array.isArray(res.data)) {
-          collections = res.data
-        } else if (Array.isArray(res.records)) {
-          collections = res.records
-        } else if (Array.isArray(res)) {
-          collections = res
-        }
+        // 后端返回格式：data.rows
+        const collections = res.data?.rows || []
 
         // 提取内容ID
         this.collectedContentIds = new Set(

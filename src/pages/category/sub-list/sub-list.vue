@@ -166,17 +166,8 @@ const loadSubCategories = async (refresh = false) => {
       pageSize: 20
     })
 
-    // 确保list是数组
-    let list = []
-    if (res.data?.records && Array.isArray(res.data.records)) {
-      list = res.data.records
-    } else if (res.data?.list && Array.isArray(res.data.list)) {
-      list = res.data.list
-    } else if (Array.isArray(res.data)) {
-      list = res.data
-    } else if (Array.isArray(res)) {
-      list = res
-    }
+    // 后端返回格式：data.rows
+    const list = res.data?.rows || []
 
     if (refresh) {
       subCategories.value = list.filter(item => item != null)

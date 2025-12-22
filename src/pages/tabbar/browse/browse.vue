@@ -84,6 +84,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { useCategoryStore } from '@/store/category'
 import { categoryApi } from '@/api'
 
@@ -114,19 +115,8 @@ const loadCategories = async (refresh = false) => {
       pageSize: 20
     })
 
-    // 确保list是数组
-    let list = []
-    if (res.data?.records && Array.isArray(res.data.records)) {
-      list = res.data.records
-    } else if (res.data?.list && Array.isArray(res.data.list)) {
-      list = res.data.list
-    } else if (Array.isArray(res.data)) {
-      list = res.data
-    } else if (Array.isArray(res)) {
-      list = res
-    }
-
-    // 过滤掉null或undefined的元素
+    // 后端返回格式：data.rows
+    const list = res.data?.rows || []
     const validList = list.filter(item => item != null)
 
     if (refresh) {
@@ -175,9 +165,14 @@ const createMainCategory = () => {
   })
 }
 
-// 页面加载
-onMounted(() => {
+// 页面显示时加载（TabBar页面使用onShow）
+onShow(() => {
   loadCategories(true)
+})
+
+// 页面初始化
+onMounted(() => {
+  console.log('Browse page mounted')
 })
 </script>
 

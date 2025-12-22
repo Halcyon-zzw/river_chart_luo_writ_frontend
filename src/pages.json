@@ -1,16 +1,16 @@
 {
 	"pages": [
 		{
-			"path": "pages/tabbar/browse/browse",
+			"path": "pages/tabbar/recent/recent",
 			"style": {
-				"navigationBarTitleText": "浏览",
+				"navigationBarTitleText": "最近",
 				"navigationStyle": "custom"
 			}
 		},
 		{
-			"path": "pages/tabbar/recent/recent",
+			"path": "pages/tabbar/browse/browse",
 			"style": {
-				"navigationBarTitleText": "最近",
+				"navigationBarTitleText": "浏览",
 				"navigationStyle": "custom"
 			}
 		},
