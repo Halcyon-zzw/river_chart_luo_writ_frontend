@@ -62,14 +62,13 @@
           />
         </view>
 
-        <!-- 分类选择 -->
+        <!-- 分类显示（不可编辑） -->
         <view class="form-item">
           <text class="form-label">子分类</text>
-          <view class="form-selector" @click="selectSubCategory">
-            <text class="selector-text" :class="{ placeholder: !selectedSubCategory }">
-              {{ selectedSubCategory?.name || '请选择子分类（必填）' }}
+          <view class="form-display">
+            <text class="display-text">
+              {{ selectedSubCategory?.name || '未指定分类' }}
             </text>
-            <text class="selector-arrow">›</text>
           </view>
         </view>
 
@@ -113,6 +112,7 @@
 import { ref, reactive } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { contentApi } from '@/api'
+import { useCategoryStore } from '@/store/category'
 import config from '@/utils/config'
 
 // 数据
@@ -140,7 +140,11 @@ onLoad((options) => {
 
   if (options.subCategoryId) {
     formData.subCategoryId = options.subCategoryId
-    // TODO: 加载子分类信息
+    // 从store获取子分类信息
+    const categoryStore = useCategoryStore()
+    if (categoryStore.currentSubCategory) {
+      selectedSubCategory.value = categoryStore.currentSubCategory
+    }
   }
 
   if (options.mainCategoryId) {
@@ -211,14 +215,6 @@ const removeImage = (index) => {
   imageList.value.splice(index, 1)
 }
 
-// 选择子分类
-const selectSubCategory = () => {
-  uni.showToast({
-    title: '子分类选择功能开发中',
-    icon: 'none'
-  })
-}
-
 // 选择标签
 const selectTags = () => {
   uni.showToast({
@@ -244,18 +240,30 @@ const uploadImages = async () => {
     const uploadPromises = toUpload.map(img => {
       return new Promise((resolve, reject) => {
         uni.uploadFile({
-          url: config.API_BASE_URL + '/content/upload-images',
+          url: config.API_BASE_URL + '/file/upload',
           filePath: img.url,
           name: 'file',
           success: (res) => {
             if (res.statusCode === 200) {
-              const data = JSON.parse(res.data)
-              resolve(data.data?.url || data.url)
+              try {
+                const data = JSON.parse(res.data)
+                // 根据后端返回格式解析URL
+                const url = data.data?.url || data.data || data.url || ''
+                if (url) {
+                  resolve(url)
+                } else {
+                  reject(new Error('上传返回的URL为空'))
+                }
+              } catch (e) {
+                reject(new Error('解析上传结果失败'))
+              }
             } else {
-              reject(new Error('上传失败'))
+              reject(new Error(`上传失败: ${res.statusCode}`))
             }
           },
-          fail: reject
+          fail: (err) => {
+            reject(new Error(err.errMsg || '上传失败'))
+          }
         })
       })
     })
@@ -273,6 +281,7 @@ const uploadImages = async () => {
 
     return imageList.value.map(img => img.url)
   } catch (error) {
+    console.error('Upload images error:', error)
     throw error
   }
 }
@@ -328,7 +337,10 @@ const submit = async () => {
 
     // 提交数据
     const data = {
-      ...formData,
+      title: formData.name,
+      description: formData.description,
+      subCategoryId: formData.subCategoryId,
+      mainCategoryId: formData.mainCategoryId,
       contentType: 'image',
       imageUrl: imageUrls.join(','),
       tagIds: selectedTags.value.map(tag => tag.id)
@@ -509,29 +521,16 @@ const submit = async () => {
   color: #cccccc;
 }
 
-.form-selector {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.form-display {
   padding: 24rpx 28rpx;
-  background: #ffffff;
+  background: #f5f5f5;
   border: 1rpx solid rgba(0, 0, 0, 0.08);
   border-radius: 12rpx;
 }
 
-.selector-text {
+.display-text {
   font-size: 28rpx;
-  color: #333333;
-}
-
-.selector-text.placeholder {
-  color: #cccccc;
-}
-
-.selector-arrow {
-  font-size: 48rpx;
-  color: #cccccc;
-  font-weight: 200;
+  color: #666666;
 }
 
 /* 标签容器 */

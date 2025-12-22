@@ -62,6 +62,11 @@ export const categoryApi = {
   // 获取子分类关联的标签
   getSubCategoryTags(id) {
     return http.post(`/sub-category/${id}/tags`)
+  },
+
+  // 上传分类封面图（使用统一的上传接口）
+  uploadCoverImage(filePath) {
+    return http.upload('/file/upload', filePath)
   }
 }
 

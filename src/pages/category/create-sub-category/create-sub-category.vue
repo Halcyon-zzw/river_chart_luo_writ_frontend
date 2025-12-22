@@ -165,11 +165,28 @@ const handleSubmit = async () => {
   submitting.value = true
 
   try {
+    let coverImageUrl = ''
+
+    // 如果有封面图且是本地路径，先上传
+    if (formData.value.coverImage && !formData.value.coverImage.startsWith('http')) {
+      uni.showLoading({
+        title: '上传图片中...',
+        mask: true
+      })
+
+      const uploadRes = await categoryApi.uploadCoverImage(formData.value.coverImage)
+      coverImageUrl = uploadRes.data?.url || uploadRes.data || ''
+
+      uni.hideLoading()
+    } else {
+      coverImageUrl = formData.value.coverImage
+    }
+
     await categoryApi.createSubCategory({
       mainCategoryId: formData.value.mainCategoryId,
       name: formData.value.name.trim(),
       description: formData.value.description.trim(),
-      coverImage: formData.value.coverImage
+      coverImage: coverImageUrl
     })
 
     uni.showToast({
@@ -184,7 +201,7 @@ const handleSubmit = async () => {
   } catch (error) {
     console.error('Create sub category error:', error)
     uni.showToast({
-      title: '创建失败，请重试',
+      title: error.message || '创建失败，请重试',
       icon: 'none'
     })
   } finally {

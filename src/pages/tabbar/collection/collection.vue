@@ -88,7 +88,6 @@ const loading = ref(false)
 const refreshing = ref(false)
 const currentPage = ref(1)
 const hasMore = ref(true)
-let isFirstLoad = true
 
 // 加载收藏列表
 const loadCollections = async (refresh = false) => {
@@ -204,14 +203,6 @@ const formatTime = (time) => {
 
 // 页面显示时加载（TabBar页面使用onShow）
 onShow(() => {
-  // 首次加载
-  if (isFirstLoad) {
-    isFirstLoad = false
-    loadCollections(true)
-    return
-  }
-
-  // 从其他页面返回时刷新
   loadCollections(true)
 })
 

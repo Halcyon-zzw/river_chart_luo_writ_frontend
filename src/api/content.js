@@ -27,13 +27,9 @@ export const contentApi = {
     return http.delete(`/content/${id}`)
   },
 
-  // 批量上传图片
-  uploadImages(files) {
-    return http.post('/content/upload-images', files, {
-      header: {
-        'Content-Type': 'multipart/form-data'
-      }
-    })
+  // 上传单个图片（使用统一的上传接口）
+  uploadImage(filePath) {
+    return http.upload('/file/upload', filePath)
   },
 
   // 获取内容关联的标签
