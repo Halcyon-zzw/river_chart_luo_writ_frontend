@@ -54,7 +54,7 @@
                   {{ tag.name }}
                 </text>
               </view>
-              <text class="category-count">{{ category.contentCount || 0 }} 项</text>
+              <text class="category-count">{{ category.subCategorySize || 0 }} 项</text>
             </view>
           </view>
         </view>
@@ -98,6 +98,7 @@ const hasMore = ref(true)
 
 // 加载主分类列表
 const loadCategories = async (refresh = false) => {
+  console.log('loadCategories called, refresh:', refresh, 'loading:', loading.value)
   if (loading.value) return
 
   if (refresh) {
@@ -110,14 +111,17 @@ const loadCategories = async (refresh = false) => {
   loading.value = true
 
   try {
+    console.log('Calling getMainCategories API...')
     const res = await categoryApi.getMainCategories({
       pageNum: currentPage.value,
       pageSize: 20
     })
 
+    console.log('API response:', res)
     // 后端返回格式：data.rows
     const list = res.data?.rows || []
     const validList = list.filter(item => item != null)
+    console.log('Valid list length:', validList.length)
 
     if (refresh) {
       categories.value = validList
@@ -165,14 +169,15 @@ const createMainCategory = () => {
   })
 }
 
-// 页面显示时加载（TabBar页面使用onShow）
-onShow(() => {
-  loadCategories(true)
-})
-
 // 页面初始化
 onMounted(() => {
   console.log('Browse page mounted')
+})
+
+// 页面显示时加载（TabBar页面使用onShow）
+onShow(() => {
+  console.log('Browse page onShow triggered')
+  loadCategories(true)
 })
 </script>
 

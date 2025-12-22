@@ -45,7 +45,7 @@
                   {{ tag.name }}
                 </text>
               </view>
-              <text class="sub-count">{{ subCategory.contentCount || 0 }} 项</text>
+              <text class="sub-count">{{ subCategory.contentSize || 0 }} 项</text>
             </view>
           </view>
         </view>
