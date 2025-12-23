@@ -20,56 +20,100 @@
       :refresher-triggered="refreshing"
     >
       <view class="category-container">
-        <!-- 分类卡片 -->
-        <view
+        <!-- 分类卡片 -->\n        <view
           v-for="category in categories"
           :key="category.id"
-          class="category-card"
-          @click="goToSubCategory(category)"
+          class="category-card-wrapper"
         >
-          <!-- 背景图 -->
-          <image
-            v-if="category.coverImage"
-            class="category-bg"
-            :src="category.coverImage"
-            mode="aspectFill"
-          ></image>
-          <view v-else class="category-bg-placeholder"></view>
-
-          <!-- 渐变遮罩 -->
-          <view class="category-overlay"></view>
-
-          <!-- 内容 -->
-          <view class="category-content">
-            <view class="category-name-row">
-              <input
-                v-if="editingId === category.id"
-                class="category-name-input"
-                v-model="editingName"
-                @blur="saveEdit(category)"
-                @click.stop
-                :focus="true"
-              />
-              <text v-else class="category-name">{{ category.name }}</text>
-              <text class="edit-icon" @click.stop="startEdit(category)">✎</text>
-            </view>
-            <text v-if="category.description" class="category-desc">
-              {{ category.description }}
-            </text>
-
-            <!-- 标签和数量 -->
-            <view class="category-footer">
-              <view class="category-tags">
-                <text
-                  v-for="tag in category.tags?.slice(0, 3)"
-                  :key="tag.id"
-                  class="tag-item"
-                >
-                  {{ tag.name }}
-                </text>
+          <!-- 滑动容器 -->
+          <view
+            class="category-card"
+            :style="{
+              transform: swipeId === category.id ? `translateX(${swipeX}px)` : 'translateX(0)',
+              transition: swipeId === category.id && swipeX === -120 ? 'transform 0.3s' : 'none'
+            }"
+            @touchstart="onTouchStart($event, category)"
+            @touchmove="onTouchMove($event, category)"
+            @touchend="onTouchEnd($event, category)"
+            @click="selectionMode ? toggleSelection(category) : goToSubCategory(category)"
+          >
+            <!-- 选择框 -->
+            <view v-if="selectionMode" class="checkbox-container" @click.stop="toggleSelection(category)">
+              <view
+                class="checkbox"
+                :class="{
+                  checked: selectedIds.includes(category.id),
+                  disabled: category.subCategorySize > 0
+                }"
+              >
+                <text v-if="selectedIds.includes(category.id)" class="checkbox-icon">✓</text>
               </view>
-              <text class="category-count">{{ category.subCategorySize || 0 }} 项</text>
             </view>
+
+            <!-- 背景图 -->
+            <image
+              v-if="category.coverImage"
+              class="category-bg"
+              :src="category.coverImage"
+              mode="aspectFill"
+            ></image>
+            <view v-else class="category-bg-placeholder"></view>
+
+            <!-- 渐变遮罩 -->
+            <view class="category-overlay"></view>
+
+            <!-- 内容 -->
+            <view class="category-content">
+              <view class="category-name-row">
+                <input
+                  v-if="editingId === category.id"
+                  class="category-name-input"
+                  v-model="editingName"
+                  @blur="saveEdit(category)"
+                  @click.stop
+                  :focus="true"
+                />
+                <text v-else class="category-name">{{ category.name }}</text>
+                <text
+                  v-if="!selectionMode"
+                  class="edit-icon"
+                  @click.stop="startEdit(category)"
+                >✎</text>
+              </view>
+              <text v-if="category.description" class="category-desc">
+                {{ category.description }}
+              </text>
+
+              <!-- 标签和数量 -->
+              <view class="category-footer">
+                <view class="category-tags">
+                  <text
+                    v-for="tag in category.tags?.slice(0, 3)"
+                    :key="tag.id"
+                    class="tag-item"
+                  >
+                    {{ tag.name }}
+                  </text>
+                </view>
+                <text class="category-count">{{ category.subCategorySize || 0 }} 项</text>
+              </view>
+
+              <!-- 时间信息 -->
+              <view class="category-time">
+                <text class="time-text">创建: {{ formatTime(category.createTime) }}</text>
+                <text class="time-text">修改: {{ formatTime(category.updateTime) }}</text>
+              </view>
+            </view>
+          </view>
+
+          <!-- 删除按钮 -->
+          <view
+            v-if="swipeId === category.id"
+            class="delete-button"
+            :class="{ disabled: category.subCategorySize > 0 }"
+            @click.stop="deleteSingle(category)"
+          >
+            <text class="delete-text">删除</text>
           </view>
         </view>
 
@@ -90,8 +134,18 @@
     </scroll-view>
 
     <!-- 悬浮创建按钮 -->
-    <view class="fab-button" @click="createMainCategory">
+    <view v-if="!selectionMode" class="fab-button" @click="createMainCategory">
       <text class="fab-icon">+</text>
+    </view>
+
+    <!-- 批量操作栏 -->
+    <view v-if="selectionMode" class="batch-toolbar">
+      <view class="batch-btn cancel" @click="exitSelectionMode">
+        <text>取消</text>
+      </view>
+      <view class="batch-btn delete" @click="batchDelete">
+        <text>删除 ({{ selectedIds.length }})</text>
+      </view>
     </view>
   </view>
 </template>
@@ -112,6 +166,12 @@ const currentPage = ref(1)
 const hasMore = ref(true)
 const editingId = ref(null)
 const editingName = ref('')
+
+// 滑动和选择模式
+const swipeId = ref(null)
+const swipeX = ref(0)
+const selectionMode = ref(false)
+const selectedIds = ref([])
 
 // 加载主分类列表
 const loadCategories = async (refresh = false) => {
@@ -231,6 +291,159 @@ const saveEdit = async (category) => {
   }
 }
 
+// 触摸开始
+let touchStartX = 0
+let touchStartTime = 0
+const onTouchStart = (e, category) => {
+  if (selectionMode.value || editingId.value) return
+  touchStartX = e.touches[0].clientX
+  touchStartTime = Date.now()
+}
+
+// 触摸移动
+const onTouchMove = (e, category) => {
+  if (selectionMode.value || editingId.value) return
+  const touchX = e.touches[0].clientX
+  const deltaX = touchX - touchStartX
+
+  if (deltaX < 0 && deltaX > -150) {
+    swipeId.value = category.id
+    swipeX.value = deltaX
+  }
+}
+
+// 触摸结束
+const onTouchEnd = (e, category) => {
+  if (selectionMode.value || editingId.value) return
+
+  const touchTime = Date.now() - touchStartTime
+
+  // 长按检测（超过500ms）
+  if (touchTime > 500 && Math.abs(swipeX.value) < 10) {
+    enterSelectionMode()
+    return
+  }
+
+  // 滑动检测
+  if (swipeX.value < -60) {
+    swipeId.value = category.id
+    swipeX.value = -120
+  } else {
+    swipeId.value = null
+    swipeX.value = 0
+  }
+}
+
+// 进入选择模式
+const enterSelectionMode = () => {
+  selectionMode.value = true
+  selectedIds.value = []
+  swipeId.value = null
+  swipeX.value = 0
+}
+
+// 退出选择模式
+const exitSelectionMode = () => {
+  selectionMode.value = false
+  selectedIds.value = []
+}
+
+// 切换选择
+const toggleSelection = (category) => {
+  if (category.subCategorySize > 0) {
+    uni.showToast({
+      title: '该分类下还有内容，无法选中',
+      icon: 'none'
+    })
+    return
+  }
+
+  const index = selectedIds.value.indexOf(category.id)
+  if (index > -1) {
+    selectedIds.value.splice(index, 1)
+  } else {
+    selectedIds.value.push(category.id)
+  }
+}
+
+// 删除单个分类
+const deleteSingle = async (category) => {
+  if (category.subCategorySize > 0) {
+    uni.showToast({
+      title: '该分类下还有内容，无法删除',
+      icon: 'none'
+    })
+    return
+  }
+
+  uni.showModal({
+    title: '确认删除',
+    content: `确定要删除"${category.name}"吗？`,
+    success: async (res) => {
+      if (res.confirm) {
+        try {
+          await categoryApi.deleteMainCategory(category.id)
+          uni.showToast({
+            title: '删除成功',
+            icon: 'success'
+          })
+          loadCategories(true)
+        } catch (error) {
+          uni.showToast({
+            title: '删除失败',
+            icon: 'none'
+          })
+        }
+      }
+    }
+  })
+  swipeId.value = null
+  swipeX.value = 0
+}
+
+// 批量删除
+const batchDelete = async () => {
+  if (selectedIds.value.length === 0) {
+    uni.showToast({
+      title: '请选择要删除的分类',
+      icon: 'none'
+    })
+    return
+  }
+
+  uni.showModal({
+    title: '确认删除',
+    content: `确定要删除选中的 ${selectedIds.value.length} 个分类吗？`,
+    success: async (res) => {
+      if (res.confirm) {
+        try {
+          await Promise.all(
+            selectedIds.value.map(id => categoryApi.deleteMainCategory(id))
+          )
+          uni.showToast({
+            title: '删除成功',
+            icon: 'success'
+          })
+          exitSelectionMode()
+          loadCategories(true)
+        } catch (error) {
+          uni.showToast({
+            title: '删除失败',
+            icon: 'none'
+          })
+        }
+      }
+    }
+  })
+}
+
+// 格式化时间
+const formatTime = (time) => {
+  if (!time) return ''
+  const date = new Date(time)
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+}
+
 // 页面初始化
 onMounted(() => {
   console.log('Browse page mounted')
@@ -307,11 +520,17 @@ onShow(() => {
   padding: 30rpx 30rpx 0;
 }
 
+/* 分类卡片包装器 */
+.category-card-wrapper {
+  position: relative;
+  margin-bottom: 30rpx;
+  overflow: hidden;
+}
+
 /* 分类卡片 */
 .category-card {
   position: relative;
-  height: 360rpx;
-  margin-bottom: 30rpx;
+  height: 400rpx;
   border-radius: 24rpx;
   overflow: hidden;
   box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.3);
@@ -425,6 +644,127 @@ onShow(() => {
   color: rgba(255, 255, 255, 0.85);
   text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.2);
   margin-left: 20rpx;
+}
+
+/* 时间信息 */
+.category-time {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+  margin-top: 16rpx;
+}
+
+.time-text {
+  font-size: 20rpx;
+  color: rgba(255, 255, 255, 0.7);
+  text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.2);
+}
+
+/* 选择框 */
+.checkbox-container {
+  position: absolute;
+  top: 20rpx;
+  left: 20rpx;
+  z-index: 10;
+}
+
+.checkbox {
+  width: 48rpx;
+  height: 48rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10rpx);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.checkbox.checked {
+  background: #00c4b3;
+  border-color: #00c4b3;
+}
+
+.checkbox.disabled {
+  opacity: 0.4;
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.checkbox-icon {
+  font-size: 28rpx;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+/* 删除按钮 */
+.delete-button {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 120rpx;
+  background: #ff4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0 24rpx 24rpx 0;
+}
+
+.delete-button.disabled {
+  background: #cccccc;
+}
+
+.delete-text {
+  font-size: 28rpx;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+/* 批量操作栏 */
+.batch-toolbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 120rpx;
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20rpx);
+  border-top: 1rpx solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  gap: 20rpx;
+  padding: 20rpx 30rpx;
+  z-index: 100;
+}
+
+.batch-btn {
+  flex: 1;
+  height: 80rpx;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30rpx;
+  font-weight: 500;
+}
+
+.batch-btn.cancel {
+  background: rgba(0, 0, 0, 0.08);
+  color: #333333;
+}
+
+.batch-btn.cancel:active {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.batch-btn.delete {
+  background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+  color: #ffffff;
+}
+
+.batch-btn.delete:active {
+  opacity: 0.8;
 }
 
 /* 加载状态 */
