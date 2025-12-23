@@ -80,7 +80,7 @@
           class="note-card"
           @click="goToDetail(item)"
         >
-          <text class="note-title">{{ item.name }}</text>
+          <text class="note-title">{{ item.title || item.name }}</text>
           <text class="note-preview">{{ getTextPreview(item.noteContent) }}</text>
           <view class="note-footer">
             <view class="note-tags">

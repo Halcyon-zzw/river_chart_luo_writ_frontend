@@ -51,7 +51,7 @@
                 :focus="true"
               />
               <text v-else class="category-name">{{ category.name }}</text>
-              <text class="edit-icon" @click.stop="startEdit(category)">✏️</text>
+              <text class="edit-icon" @click.stop="startEdit(category)">✎</text>
             </view>
             <text v-if="category.description" class="category-desc">
               {{ category.description }}
@@ -380,7 +380,9 @@ onShow(() => {
 
 .edit-icon {
   font-size: 32rpx;
-  opacity: 0.8;
+  color: #ffffff;
+  opacity: 1;
+  transform: scaleX(-1);
 }
 
 .category-desc {

@@ -46,7 +46,7 @@
                 :focus="true"
               />
               <text v-else class="sub-name">{{ subCategory.name }}</text>
-              <text class="edit-icon" @click.stop="startEdit(subCategory)">✏️</text>
+              <text class="edit-icon" @click.stop="startEdit(subCategory)">✎</text>
             </view>
             <text v-if="subCategory.description" class="sub-desc">
               {{ subCategory.description }}
@@ -369,7 +369,9 @@ const saveEdit = async (subCategory) => {
 
 .edit-icon {
   font-size: 28rpx;
-  opacity: 0.8;
+  color: #ffffff;
+  opacity: 1;
+  transform: scaleX(-1);
 }
 
 .sub-desc {

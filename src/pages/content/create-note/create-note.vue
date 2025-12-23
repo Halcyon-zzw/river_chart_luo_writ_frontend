@@ -10,6 +10,7 @@
           placeholder="请输入标题"
           placeholder-class="input-placeholder"
           :maxlength="100"
+          @input="hasModified = true"
         />
       </view>
 
@@ -27,42 +28,58 @@
       <!-- 其他表单项 -->
       <view class="form-section">
         <!-- 描述 -->
-        <view class="form-item">
-          <text class="form-label">简介</text>
-          <textarea
-            class="form-textarea"
-            v-model="formData.description"
-            placeholder="请输入简介（可选）"
-            placeholder-class="input-placeholder"
-            :maxlength="200"
-          />
+        <view class="collapsible-section">
+          <view class="section-header" @click="toggleSection('description')">
+            <text class="section-title">简介</text>
+            <text class="section-arrow">{{ sectionExpanded.description ? '▼' : '▶' }}</text>
+          </view>
+          <view v-if="sectionExpanded.description" class="section-content">
+            <textarea
+              class="form-textarea"
+              v-model="formData.description"
+              placeholder="请输入简介（可选）"
+              placeholder-class="input-placeholder"
+              :maxlength="200"
+              @input="hasModified = true"
+            />
+          </view>
         </view>
 
         <!-- 分类显示（不可编辑） -->
-        <view class="form-item">
-          <text class="form-label">子分类</text>
-          <view class="form-display">
-            <text class="display-text">
-              {{ selectedSubCategory?.name || '未指定分类' }}
-            </text>
+        <view class="collapsible-section">
+          <view class="section-header" @click="toggleSection('category')">
+            <text class="section-title">子分类</text>
+            <text class="section-arrow">{{ sectionExpanded.category ? '▼' : '▶' }}</text>
+          </view>
+          <view v-if="sectionExpanded.category" class="section-content">
+            <view class="form-display">
+              <text class="display-text">
+                {{ selectedSubCategory?.name || '未指定分类' }}
+              </text>
+            </view>
           </view>
         </view>
 
         <!-- 标签 -->
-        <view class="form-item">
-          <text class="form-label">标签</text>
-          <view class="tags-container">
-            <view
-              v-for="tag in selectedTags"
-              :key="tag.id"
-              class="tag-chip"
-              @click="removeTag(tag)"
-            >
-              <text class="tag-text">{{ tag.name }}</text>
-              <text class="tag-close">×</text>
-            </view>
-            <view class="add-tag-btn" @click="selectTags">
-              <text>+ 添加标签</text>
+        <view class="collapsible-section">
+          <view class="section-header" @click="toggleSection('tags')">
+            <text class="section-title">标签</text>
+            <text class="section-arrow">{{ sectionExpanded.tags ? '▼' : '▶' }}</text>
+          </view>
+          <view v-if="sectionExpanded.tags" class="section-content">
+            <view class="tags-container">
+              <view
+                v-for="tag in selectedTags"
+                :key="tag.id"
+                class="tag-chip"
+                @click="removeTag(tag)"
+              >
+                <text class="tag-text">{{ tag.name }}</text>
+                <text class="tag-close">×</text>
+              </view>
+              <view class="add-tag-btn" @click="selectTags">
+                <text>+ 添加标签</text>
+              </view>
             </view>
           </view>
         </view>
@@ -127,6 +144,14 @@ const isEdit = ref(false)
 const editorCtx = ref(null)
 const selectedSubCategory = ref(null)
 const selectedTags = ref([])
+const hasModified = ref(false)
+
+// 折叠状态
+const sectionExpanded = reactive({
+  description: true,
+  category: true,
+  tags: true
+})
 
 const formData = reactive({
   name: '',
@@ -158,6 +183,11 @@ onLoad((options) => {
   if (options.mainCategoryId) {
     formData.mainCategoryId = options.mainCategoryId
   }
+
+  // 设置页面标题
+  uni.setNavigationBarTitle({
+    title: isEdit.value ? '编辑笔记' : '创建笔记'
+  })
 })
 
 // 编辑器就绪
@@ -174,6 +204,7 @@ const onEditorReady = () => {
 const onEditorInput = (e) => {
   // 实时更新内容（可选）
   console.log('Editor input:', e.detail.html)
+  hasModified.value = true
 }
 
 // 加载内容详情（编辑模式）
@@ -259,6 +290,11 @@ const selectTags = () => {
   })
 }
 
+// 切换折叠状态
+const toggleSection = (section) => {
+  sectionExpanded[section] = !sectionExpanded[section]
+}
+
 // 移除标签
 const removeTag = (tag) => {
   selectedTags.value = selectedTags.value.filter(t => t.id !== tag.id)
@@ -266,6 +302,11 @@ const removeTag = (tag) => {
 
 // 取消
 const cancel = () => {
+  if (!hasModified.value) {
+    uni.navigateBack()
+    return
+  }
+
   uni.showModal({
     title: '提示',
     content: '确定要取消吗？未保存的内容将丢失',
@@ -406,6 +447,37 @@ const submit = async () => {
   padding: 20rpx 40rpx;
 }
 
+/* 折叠区域 */
+.collapsible-section {
+  margin-bottom: 24rpx;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24rpx 28rpx;
+  background: #ffffff;
+  border-radius: 12rpx;
+  cursor: pointer;
+}
+
+.section-title {
+  font-size: 28rpx;
+  color: #333333;
+  font-weight: 500;
+}
+
+.section-arrow {
+  font-size: 24rpx;
+  color: #999999;
+  transition: transform 0.3s ease;
+}
+
+.section-content {
+  margin-top: 12rpx;
+}
+
 .form-item {
   margin-bottom: 40rpx;
 }
@@ -480,7 +552,7 @@ const submit = async () => {
 
 /* 底部占位 */
 .bottom-placeholder {
-  height: 200rpx;
+  height: 300rpx;
 }
 
 /* 工具栏 */

@@ -29,7 +29,7 @@
       </view>
 
       <!-- 富文本内容 -->
-      <view class="note-content" @dblclick="editContent">
+      <view class="note-content" @tap="handleContentTap">
         <rich-text :nodes="contentDetail.noteContent || ''"></rich-text>
       </view>
 
@@ -74,6 +74,7 @@ const collectionStore = useCollectionStore()
 const contentId = ref('')
 const contentDetail = ref({})
 let isFirstLoad = true
+let lastTapTime = 0
 
 // 计算属性
 const isCollected = computed(() => {
@@ -112,6 +113,19 @@ const loadContentDetail = async () => {
 // 切换收藏
 const toggleCollect = async () => {
   await collectionStore.toggleCollection(contentId.value)
+}
+
+// 处理内容区域点击（双击检测）
+const handleContentTap = () => {
+  const currentTime = Date.now()
+  const timeDiff = currentTime - lastTapTime
+
+  if (timeDiff < 300) {
+    // 双击
+    editContent()
+  }
+
+  lastTapTime = currentTime
 }
 
 // 编辑内容

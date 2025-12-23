@@ -83,7 +83,7 @@ const request = (options) => {
     header: {
       'Content-Type': 'application/json'
     },
-    timeout: 30000,
+    timeout: 10000,
     showLoading: true
   }
 
