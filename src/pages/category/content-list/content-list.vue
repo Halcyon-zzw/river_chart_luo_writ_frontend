@@ -126,7 +126,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import { contentApi } from '@/api'
 import { useCategoryStore } from '@/store/category'
 
@@ -152,6 +152,7 @@ const leftColumn = ref([])
 const rightColumn = ref([])
 let leftHeight = 0
 let rightHeight = 0
+let isFirstLoad = true
 
 // 文本内容
 const noteContents = computed(() => {
@@ -170,7 +171,24 @@ onLoad((options) => {
   if (categoryStore.currentSubCategory) {
     subCategoryName.value = categoryStore.currentSubCategory.name || ''
   }
+})
 
+// 页面显示时刷新
+onShow(async () => {
+  // 首次加载
+  if (isFirstLoad) {
+    isFirstLoad = false
+    await loadContents(true)
+
+    // 如果图片列表为空，检查是否有文本内容
+    if (currentTab.value === 'image' && contents.value.length === 0) {
+      currentTab.value = 'note'
+      await loadContents(true)
+    }
+    return
+  }
+
+  // 从创建/编辑页面返回时刷新
   loadContents(true)
 })
 

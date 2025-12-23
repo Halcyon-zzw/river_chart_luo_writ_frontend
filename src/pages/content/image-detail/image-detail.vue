@@ -47,7 +47,7 @@
 
       <view class="info-content">
         <!-- 标题 -->
-        <text class="content-title">{{ contentDetail.name || '未命名' }}</text>
+        <text class="content-title">{{ contentDetail.title || '未命名' }}</text>
 
         <!-- 描述 -->
         <text v-if="contentDetail.description" class="content-desc">
@@ -110,7 +110,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import { useCollectionStore } from '@/store/collection'
 import { contentApi } from '@/api'
 
@@ -123,6 +123,7 @@ const images = ref([])
 const currentImageIndex = ref(0)
 const infoExpanded = ref(false)
 const showActions = ref(false)
+let isFirstLoad = true
 
 // 计算属性
 const isCollected = computed(() => {
@@ -132,6 +133,15 @@ const isCollected = computed(() => {
 // 页面加载
 onLoad((options) => {
   contentId.value = options.id
+})
+
+// 页面显示时刷新
+onShow(() => {
+  if (isFirstLoad) {
+    isFirstLoad = false
+    loadContentDetail()
+    return
+  }
   loadContentDetail()
 })
 
@@ -248,7 +258,7 @@ const shareContent = () => {
 // 编辑内容
 const editContent = () => {
   uni.navigateTo({
-    url: `/pages/content/create-image/create-image?id=${contentId.value}&mode=edit`
+    url: `/pages/content/create-image/create-image?id=${contentId.value}&mode=edit&subCategoryId=${contentDetail.value.subCategoryId}&mainCategoryId=${contentDetail.value.mainCategoryId}`
   })
 }
 

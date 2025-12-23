@@ -182,7 +182,7 @@ const loadContentDetail = async () => {
     const res = await contentApi.getContentById(contentId.value)
     const detail = res.data || res
 
-    formData.name = detail.name
+    formData.name = detail.title || detail.name || ''
     formData.description = detail.description
     formData.subCategoryId = detail.subCategoryId
     formData.mainCategoryId = detail.mainCategoryId

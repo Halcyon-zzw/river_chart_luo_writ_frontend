@@ -3,13 +3,18 @@
     <scroll-view class="note-scroll" scroll-y>
       <!-- 标题 -->
       <view class="note-header">
-        <text class="note-title">{{ contentDetail.name || '未命名笔记' }}</text>
+        <text class="note-title">{{ contentDetail.title || '未命名笔记' }}</text>
 
         <!-- 元信息 -->
         <view class="note-meta">
           <text class="meta-text">{{ formatTime(contentDetail.createTime) }}</text>
           <text v-if="contentDetail.category" class="meta-text">{{ contentDetail.category }}</text>
         </view>
+
+        <!-- 描述 -->
+        <text v-if="contentDetail.description" class="note-description">
+          {{ contentDetail.description }}
+        </text>
 
         <!-- 标签 -->
         <view v-if="contentDetail.tags && contentDetail.tags.length > 0" class="note-tags">
@@ -24,11 +29,8 @@
       </view>
 
       <!-- 富文本内容 -->
-      <view class="note-content">
-        <mp-html
-          :content="contentDetail.noteContent || ''"
-          :selectable="true"
-        ></mp-html>
+      <view class="note-content" @dblclick="editContent">
+        <rich-text :nodes="contentDetail.noteContent || ''"></rich-text>
       </view>
 
       <!-- 底部占位 -->
@@ -62,7 +64,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import { useCollectionStore } from '@/store/collection'
 import { contentApi } from '@/api'
 
@@ -71,6 +73,7 @@ const collectionStore = useCollectionStore()
 // 数据
 const contentId = ref('')
 const contentDetail = ref({})
+let isFirstLoad = true
 
 // 计算属性
 const isCollected = computed(() => {
@@ -80,6 +83,15 @@ const isCollected = computed(() => {
 // 页面加载
 onLoad((options) => {
   contentId.value = options.id
+})
+
+// 页面显示时刷新
+onShow(() => {
+  if (isFirstLoad) {
+    isFirstLoad = false
+    loadContentDetail()
+    return
+  }
   loadContentDetail()
 })
 
@@ -105,7 +117,7 @@ const toggleCollect = async () => {
 // 编辑内容
 const editContent = () => {
   uni.navigateTo({
-    url: `/pages/content/create-note/create-note?id=${contentId.value}&mode=edit`
+    url: `/pages/content/create-note/create-note?id=${contentId.value}&mode=edit&subCategoryId=${contentDetail.value.subCategoryId}&mainCategoryId=${contentDetail.value.mainCategoryId}`
   })
 }
 
@@ -189,6 +201,15 @@ const formatTime = (time) => {
 .meta-text {
   font-size: 24rpx;
   color: #999999;
+}
+
+.note-description {
+  display: block;
+  font-size: 28rpx;
+  color: #666666;
+  line-height: 1.6;
+  margin-top: 20rpx;
+  margin-bottom: 20rpx;
 }
 
 .note-tags {

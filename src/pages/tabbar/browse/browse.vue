@@ -15,6 +15,9 @@
       class="category-scroll"
       scroll-y
       @scrolltolower="onLoadMore"
+      @refresherrefresh="onRefresh"
+      refresher-enabled
+      :refresher-triggered="refreshing"
     >
       <view class="category-container">
         <!-- 分类卡片 -->
@@ -38,7 +41,18 @@
 
           <!-- 内容 -->
           <view class="category-content">
-            <text class="category-name">{{ category.name }}</text>
+            <view class="category-name-row">
+              <input
+                v-if="editingId === category.id"
+                class="category-name-input"
+                v-model="editingName"
+                @blur="saveEdit(category)"
+                @click.stop
+                :focus="true"
+              />
+              <text v-else class="category-name">{{ category.name }}</text>
+              <text class="edit-icon" @click.stop="startEdit(category)">✏️</text>
+            </view>
             <text v-if="category.description" class="category-desc">
               {{ category.description }}
             </text>
@@ -93,35 +107,35 @@ const categoryStore = useCategoryStore()
 // 数据
 const categories = ref([])
 const loading = ref(false)
+const refreshing = ref(false)
 const currentPage = ref(1)
 const hasMore = ref(true)
+const editingId = ref(null)
+const editingName = ref('')
 
 // 加载主分类列表
 const loadCategories = async (refresh = false) => {
-  console.log('loadCategories called, refresh:', refresh, 'loading:', loading.value)
   if (loading.value) return
 
   if (refresh) {
     currentPage.value = 1
     hasMore.value = true
+    refreshing.value = true
   }
 
-  if (!hasMore.value) return
+  if (!hasMore.value && !refresh) return
 
   loading.value = true
 
   try {
-    console.log('Calling getMainCategories API...')
     const res = await categoryApi.getMainCategories({
       pageNum: currentPage.value,
       pageSize: 20
     })
 
-    console.log('API response:', res)
     // 后端返回格式：data.rows
     const list = res.data?.rows || []
     const validList = list.filter(item => item != null)
-    console.log('Valid list length:', validList.length)
 
     if (refresh) {
       categories.value = validList
@@ -144,7 +158,13 @@ const loadCategories = async (refresh = false) => {
     })
   } finally {
     loading.value = false
+    refreshing.value = false
   }
+}
+
+// 下拉刷新
+const onRefresh = () => {
+  loadCategories(true)
 }
 
 // 上拉加载更多
@@ -169,6 +189,48 @@ const createMainCategory = () => {
   })
 }
 
+// 开始编辑
+const startEdit = (category) => {
+  editingId.value = category.id
+  editingName.value = category.name
+}
+
+// 保存编辑
+const saveEdit = async (category) => {
+  if (!editingName.value.trim()) {
+    uni.showToast({
+      title: '名称不能为空',
+      icon: 'none'
+    })
+    editingId.value = null
+    return
+  }
+
+  if (editingName.value === category.name) {
+    editingId.value = null
+    return
+  }
+
+  try {
+    await categoryApi.updateMainCategory(category.id, {
+      name: editingName.value
+    })
+    category.name = editingName.value
+    editingId.value = null
+    uni.showToast({
+      title: '修改成功',
+      icon: 'success'
+    })
+  } catch (error) {
+    console.error('Update category error:', error)
+    uni.showToast({
+      title: '修改失败',
+      icon: 'none'
+    })
+    editingId.value = null
+  }
+}
+
 // 页面初始化
 onMounted(() => {
   console.log('Browse page mounted')
@@ -176,7 +238,6 @@ onMounted(() => {
 
 // 页面显示时加载（TabBar页面使用onShow）
 onShow(() => {
-  console.log('Browse page onShow triggered')
   loadCategories(true)
 })
 </script>
@@ -292,14 +353,34 @@ onShow(() => {
   z-index: 1;
 }
 
+.category-name-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 16rpx;
+}
+
 .category-name {
-  display: block;
   font-size: 40rpx;
   font-weight: 700;
   color: #ffffff;
-  text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.3);
-  margin-bottom: 12rpx;
-  letter-spacing: 1rpx;
+  flex: 1;
+}
+
+.category-name-input {
+  flex: 1;
+  font-size: 40rpx;
+  font-weight: 700;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1rpx solid rgba(255, 255, 255, 0.4);
+  border-radius: 8rpx;
+  padding: 8rpx 16rpx;
+}
+
+.edit-icon {
+  font-size: 32rpx;
+  opacity: 0.8;
 }
 
 .category-desc {

@@ -6,7 +6,14 @@
     </view>
 
     <!-- 子分类列表 -->
-    <scroll-view class="sub-scroll" scroll-y @scrolltolower="onLoadMore">
+    <scroll-view
+      class="sub-scroll"
+      scroll-y
+      @scrolltolower="onLoadMore"
+      @refresherrefresh="onRefresh"
+      refresher-enabled
+      :refresher-triggered="refreshing"
+    >
       <view class="sub-container">
         <!-- 子分类卡片 -->
         <view
@@ -29,7 +36,18 @@
 
           <!-- 内容 -->
           <view class="sub-content">
-            <text class="sub-name">{{ subCategory.name }}</text>
+            <view class="sub-name-row">
+              <input
+                v-if="editingId === subCategory.id"
+                class="sub-name-input"
+                v-model="editingName"
+                @blur="saveEdit(subCategory)"
+                @click.stop
+                :focus="true"
+              />
+              <text v-else class="sub-name">{{ subCategory.name }}</text>
+              <text class="edit-icon" @click.stop="startEdit(subCategory)">✏️</text>
+            </view>
             <text v-if="subCategory.description" class="sub-desc">
               {{ subCategory.description }}
             </text>
@@ -85,8 +103,11 @@ const mainCategoryId = ref('')
 const mainCategoryName = ref('子分类')
 const subCategories = ref([])
 const loading = ref(false)
+const refreshing = ref(false)
 const currentPage = ref(1)
 const hasMore = ref(true)
+const editingId = ref(null)
+const editingName = ref('')
 let isFirstLoad = true
 
 // 页面加载参数
@@ -119,9 +140,10 @@ const loadSubCategories = async (refresh = false) => {
   if (refresh) {
     currentPage.value = 1
     hasMore.value = true
+    refreshing.value = true
   }
 
-  if (!hasMore.value) return
+  if (!hasMore.value && !refresh) return
 
   loading.value = true
 
@@ -150,7 +172,13 @@ const loadSubCategories = async (refresh = false) => {
     })
   } finally {
     loading.value = false
+    refreshing.value = false
   }
+}
+
+// 下拉刷新
+const onRefresh = () => {
+  loadSubCategories(true)
 }
 
 // 上拉加载更多
@@ -181,6 +209,48 @@ const createSubCategory = () => {
   uni.navigateTo({
     url: `/pages/category/create-sub-category/create-sub-category?mainCategoryId=${mainCategoryId.value}`
   })
+}
+
+// 开始编辑
+const startEdit = (subCategory) => {
+  editingId.value = subCategory.id
+  editingName.value = subCategory.name
+}
+
+// 保存编辑
+const saveEdit = async (subCategory) => {
+  if (!editingName.value.trim()) {
+    uni.showToast({
+      title: '名称不能为空',
+      icon: 'none'
+    })
+    editingId.value = null
+    return
+  }
+
+  if (editingName.value === subCategory.name) {
+    editingId.value = null
+    return
+  }
+
+  try {
+    await categoryApi.updateSubCategory(subCategory.id, {
+      name: editingName.value
+    })
+    subCategory.name = editingName.value
+    editingId.value = null
+    uni.showToast({
+      title: '修改成功',
+      icon: 'success'
+    })
+  } catch (error) {
+    console.error('Update sub-category error:', error)
+    uni.showToast({
+      title: '修改失败',
+      icon: 'none'
+    })
+    editingId.value = null
+  }
 }
 </script>
 
@@ -271,13 +341,35 @@ const createSubCategory = () => {
   z-index: 1;
 }
 
+.sub-name-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 10rpx;
+}
+
 .sub-name {
-  display: block;
   font-size: 36rpx;
   font-weight: 700;
   color: #ffffff;
-  margin-bottom: 10rpx;
   text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.3);
+  flex: 1;
+}
+
+.sub-name-input {
+  flex: 1;
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1rpx solid rgba(255, 255, 255, 0.4);
+  border-radius: 8rpx;
+  padding: 8rpx 16rpx;
+}
+
+.edit-icon {
+  font-size: 28rpx;
+  opacity: 0.8;
 }
 
 .sub-desc {
