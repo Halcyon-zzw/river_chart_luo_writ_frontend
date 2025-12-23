@@ -226,8 +226,8 @@ const loadContentDetail = async () => {
     }
 
     // 处理标签
-    if (detail.tags) {
-      selectedTags.value = detail.tags
+    if (detail.tagDTOList) {
+      selectedTags.value = detail.tagDTOList
     }
   } catch (error) {
     console.error('Load content detail error:', error)

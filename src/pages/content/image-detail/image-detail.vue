@@ -55,9 +55,9 @@
         </text>
 
         <!-- 标签 -->
-        <view v-if="contentDetail.tags && contentDetail.tags.length > 0" class="content-tags">
+        <view v-if="contentDetail.tagDTOList && contentDetail.tagDTOList.length > 0" class="content-tags">
           <text
-            v-for="tag in contentDetail.tags"
+            v-for="tag in contentDetail.tagDTOList"
             :key="tag.id"
             class="tag-item"
           >

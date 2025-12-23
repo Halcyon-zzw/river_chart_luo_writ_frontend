@@ -92,7 +92,7 @@
                 <view class="category-footer">
                   <view class="category-tags">
                     <text
-                      v-for="tag in category.tags?.slice(0, 3)"
+                      v-for="tag in category.tagDTOList?.slice(0, 3)"
                       :key="tag.id"
                       class="tag-item"
                     >
@@ -114,14 +114,20 @@
             </view>
           </view>
 
-          <!-- 删除按钮 -->
-          <view
-            v-if="swipeId === category.id"
-            class="delete-button"
-            :class="{ disabled: category.subCategorySize > 0 }"
-            @click.stop="deleteSingle(category)"
-          >
-            <text class="delete-text">删除</text>
+          <!-- 滑动按钮组 -->
+          <view v-if="swipeId === category.id" class="swipe-buttons">
+            <!-- 编辑按钮 -->
+            <view class="edit-button" @click.stop="handleSwipeEdit(category)">
+              <text class="button-text">✎</text>
+            </view>
+            <!-- 删除按钮 -->
+            <view
+              class="delete-button"
+              :class="{ disabled: category.subCategorySize > 0 }"
+              @click.stop="deleteSingle(category)"
+            >
+              <text class="button-text">删除</text>
+            </view>
           </view>
         </view>
 
@@ -304,6 +310,13 @@ let touchStartX = 0
 let touchStartTime = 0
 const onTouchStart = (e, category) => {
   if (selectionMode.value || editingId.value) return
+
+  // 如果点击的不是当前已滑动的卡片，则隐藏之前的删除按钮
+  if (swipeId.value && swipeId.value !== category.id) {
+    swipeId.value = null
+    swipeX.value = 0
+  }
+
   touchStartX = e.touches[0].clientX
   touchStartTime = Date.now()
 }
@@ -314,9 +327,15 @@ const onTouchMove = (e, category) => {
   const touchX = e.touches[0].clientX
   const deltaX = touchX - touchStartX
 
-  if (deltaX < 0 && deltaX > -150) {
+  // 左滑显示编辑和删除按钮
+  if (deltaX < 0 && deltaX > -250) {
     swipeId.value = category.id
     swipeX.value = deltaX
+  }
+  // 右滑隐藏按钮
+  else if (deltaX > 0 && swipeId.value === category.id) {
+    swipeX.value = 0
+    swipeId.value = null
   }
 }
 
@@ -333,13 +352,22 @@ const onTouchEnd = (e, category) => {
   }
 
   // 滑动检测
-  if (swipeX.value < -60) {
+  if (swipeX.value < -80) {
     swipeId.value = category.id
-    swipeX.value = -120
+    swipeX.value = -200
   } else {
     swipeId.value = null
     swipeX.value = 0
   }
+}
+
+// 处理左滑编辑
+const handleSwipeEdit = (category) => {
+  swipeId.value = null
+  swipeX.value = 0
+  uni.navigateTo({
+    url: `/pages/category/create-main-category/create-main-category?id=${category.id}&mode=edit`
+  })
 }
 
 // 进入选择模式
@@ -735,25 +763,51 @@ onShow(() => {
   font-weight: 700;
 }
 
-/* 删除按钮 */
-.delete-button {
+/* 滑动按钮组 */
+.swipe-buttons {
   position: absolute;
   right: 0;
   top: 0;
   bottom: 0;
-  width: 120rpx;
-  background: #ff4444;
+  width: 200rpx;
   display: flex;
+  border-radius: 0 24rpx 24rpx 0;
+  overflow: hidden;
+}
+
+/* 编辑按钮 */
+.edit-button {
+  flex: 1;
+  background: #007AFF;
+  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  border-radius: 0 24rpx 24rpx 0;
+}
+
+.edit-button:active {
+  opacity: 0.8;
+}
+
+/* 删除按钮 */
+.delete-button {
+  flex: 1;
+  background: #ff4444;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .delete-button.disabled {
   background: #cccccc;
 }
 
-.delete-text {
+.delete-button:active {
+  opacity: 0.8;
+}
+
+.button-text {
   font-size: 28rpx;
   color: #ffffff;
   font-weight: 500;

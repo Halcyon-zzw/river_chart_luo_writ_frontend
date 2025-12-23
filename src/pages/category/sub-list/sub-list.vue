@@ -2,7 +2,10 @@
   <view class="sub-list-page">
     <!-- 分类标签 -->
     <view class="category-label-container">
-      <text class="category-label">category</text>
+      <text class="category-label">{{ mainCategoryName }}</text>
+      <view class="home-button" @click="goToHome">
+        <text class="home-icon">🏠</text>
+      </view>
     </view>
 
     <!-- 子分类列表 -->
@@ -88,7 +91,7 @@
                 <view class="sub-footer">
                   <view class="sub-tags">
                     <text
-                      v-for="tag in subCategory.tags?.slice(0, 2)"
+                      v-for="tag in subCategory.tagDTOList?.slice(0, 2)"
                       :key="tag.id"
                       class="tag-item"
                     >
@@ -110,14 +113,20 @@
             </view>
           </view>
 
-          <!-- 删除按钮 -->
-          <view
-            v-if="swipeId === subCategory.id"
-            class="delete-button"
-            :class="{ disabled: subCategory.contentSize > 0 }"
-            @click.stop="deleteSingle(subCategory)"
-          >
-            <text class="delete-text">删除</text>
+          <!-- 滑动按钮组 -->
+          <view v-if="swipeId === subCategory.id" class="swipe-buttons">
+            <!-- 编辑按钮 -->
+            <view class="edit-button" @click.stop="handleSwipeEdit(subCategory)">
+              <text class="button-text">✎</text>
+            </view>
+            <!-- 删除按钮 -->
+            <view
+              class="delete-button"
+              :class="{ disabled: subCategory.contentSize > 0 }"
+              @click.stop="deleteSingle(subCategory)"
+            >
+              <text class="button-text">删除</text>
+            </view>
           </view>
         </view>
 
@@ -327,6 +336,13 @@ let touchStartX = 0
 let touchStartTime = 0
 const onTouchStart = (e, subCategory) => {
   if (selectionMode.value || editingId.value) return
+
+  // 如果点击的不是当前已滑动的卡片，则隐藏之前的删除按钮
+  if (swipeId.value && swipeId.value !== subCategory.id) {
+    swipeId.value = null
+    swipeX.value = 0
+  }
+
   touchStartX = e.touches[0].clientX
   touchStartTime = Date.now()
 }
@@ -337,9 +353,15 @@ const onTouchMove = (e, subCategory) => {
   const touchX = e.touches[0].clientX
   const deltaX = touchX - touchStartX
 
-  if (deltaX < 0 && deltaX > -150) {
+  // 左滑显示编辑和删除按钮
+  if (deltaX < 0 && deltaX > -250) {
     swipeId.value = subCategory.id
     swipeX.value = deltaX
+  }
+  // 右滑隐藏按钮
+  else if (deltaX > 0 && swipeId.value === subCategory.id) {
+    swipeX.value = 0
+    swipeId.value = null
   }
 }
 
@@ -356,13 +378,22 @@ const onTouchEnd = (e, subCategory) => {
   }
 
   // 滑动检测
-  if (swipeX.value < -60) {
+  if (swipeX.value < -80) {
     swipeId.value = subCategory.id
-    swipeX.value = -120
+    swipeX.value = -200
   } else {
     swipeId.value = null
     swipeX.value = 0
   }
+}
+
+// 处理左滑编辑
+const handleSwipeEdit = (subCategory) => {
+  swipeId.value = null
+  swipeX.value = 0
+  uni.navigateTo({
+    url: `/pages/category/create-sub-category/create-sub-category?id=${subCategory.id}&mode=edit&mainCategoryId=${mainCategoryId.value}`
+  })
 }
 
 // 进入选择模式
@@ -482,6 +513,13 @@ const addTag = (subCategory) => {
     icon: 'none'
   })
 }
+
+// 返回首页（主分类列表）
+const goToHome = () => {
+  uni.switchTab({
+    url: '/pages/tabbar/browse/browse'
+  })
+}
 </script>
 
 <style scoped>
@@ -500,7 +538,7 @@ const addTag = (subCategory) => {
   background: #ffffff;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   padding: 0 30rpx;
   z-index: 99;
   border-bottom: 1rpx solid rgba(0, 0, 0, 0.08);
@@ -510,6 +548,27 @@ const addTag = (subCategory) => {
   font-size: 28rpx;
   color: #666666;
   font-weight: 500;
+  flex: 1;
+}
+
+.home-button {
+  width: 60rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(0, 196, 179, 0.1);
+  transition: all 0.2s ease;
+}
+
+.home-button:active {
+  background: rgba(0, 196, 179, 0.2);
+  transform: scale(0.95);
+}
+
+.home-icon {
+  font-size: 32rpx;
 }
 
 /* 滚动容器 */
@@ -719,25 +778,51 @@ const addTag = (subCategory) => {
   font-weight: 700;
 }
 
-/* 删除按钮 */
-.delete-button {
+/* 滑动按钮组 */
+.swipe-buttons {
   position: absolute;
   right: 0;
   top: 0;
   bottom: 0;
-  width: 120rpx;
-  background: #ff4444;
+  width: 200rpx;
   display: flex;
+  border-radius: 0 20rpx 20rpx 0;
+  overflow: hidden;
+}
+
+/* 编辑按钮 */
+.edit-button {
+  flex: 1;
+  background: #007AFF;
+  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  border-radius: 0 20rpx 20rpx 0;
+}
+
+.edit-button:active {
+  opacity: 0.8;
+}
+
+/* 删除按钮 */
+.delete-button {
+  flex: 1;
+  background: #ff4444;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .delete-button.disabled {
   background: #cccccc;
 }
 
-.delete-text {
+.delete-button:active {
+  opacity: 0.8;
+}
+
+.button-text {
   font-size: 28rpx;
   color: #ffffff;
   font-weight: 500;

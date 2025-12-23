@@ -6,6 +6,9 @@
         <text class="main-category-name">{{ mainCategoryName }}</text>
         <text class="sub-category-name">{{ subCategoryName }}</text>
       </view>
+      <view class="home-button" @click="goToHome">
+        <text class="home-icon">🏠</text>
+      </view>
     </view>
 
     <!-- Tab切换 -->
@@ -77,22 +80,53 @@
         <view
           v-for="item in noteContents"
           :key="item.id"
-          class="note-card"
-          @click="goToDetail(item)"
+          class="note-card-wrapper"
         >
-          <text class="note-title">{{ item.title || item.name }}</text>
-          <text class="note-preview">{{ getTextPreview(item.noteContent) }}</text>
-          <view class="note-footer">
-            <view class="note-tags">
-              <text
-                v-for="tag in item.tags?.slice(0, 3)"
-                :key="tag.id"
-                class="tag-item"
-              >
-                {{ tag.name }}
-              </text>
+          <!-- 选择框 -->
+          <view v-if="selectionMode" class="checkbox-container" @click.stop="toggleSelection(item)">
+            <view
+              class="checkbox"
+              :class="{ checked: selectedIds.includes(item.id) }"
+            >
+              <text v-if="selectedIds.includes(item.id)" class="checkbox-icon">✓</text>
             </view>
-            <text class="note-time">{{ formatTime(item.createTime) }}</text>
+          </view>
+
+          <!-- 滑动卡片 -->
+          <view
+            class="note-card"
+            :style="{
+              transform: swipeId === item.id ? `translateX(${swipeX}px)` : 'translateX(0)',
+              transition: swipeId === item.id && swipeX === -120 ? 'transform 0.3s' : 'none'
+            }"
+            @touchstart="onTouchStart($event, item)"
+            @touchmove="onTouchMove($event, item)"
+            @touchend="onTouchEnd($event, item)"
+            @click="selectionMode ? toggleSelection(item) : goToDetail(item)"
+          >
+            <text class="note-title">{{ item.title || item.name }}</text>
+            <text class="note-preview">{{ getTextPreview(item.noteContent) }}</text>
+            <view class="note-footer">
+              <view class="note-tags">
+                <text
+                  v-for="tag in item.tagDTOList?.slice(0, 3)"
+                  :key="tag.id"
+                  class="tag-item"
+                >
+                  {{ tag.name }}
+                </text>
+              </view>
+              <text class="note-time">{{ formatTime(item.createTime) }}</text>
+            </view>
+          </view>
+
+          <!-- 删除按钮 -->
+          <view
+            v-if="swipeId === item.id"
+            class="delete-button"
+            @click.stop="deleteSingle(item)"
+          >
+            <text class="delete-text">删除</text>
           </view>
         </view>
       </view>
@@ -118,8 +152,18 @@
     </scroll-view>
 
     <!-- 悬浮创建按钮 -->
-    <view class="fab-button" @click="createContent">
+    <view v-if="!selectionMode" class="fab-button" @click="createContent">
       <text class="fab-icon">+</text>
+    </view>
+
+    <!-- 批量操作栏 -->
+    <view v-if="selectionMode" class="batch-toolbar">
+      <view class="batch-btn cancel" @click="exitSelectionMode">
+        <text>取消</text>
+      </view>
+      <view class="batch-btn delete" @click="batchDelete">
+        <text>删除 ({{ selectedIds.length }})</text>
+      </view>
     </view>
   </view>
 </template>
@@ -140,6 +184,12 @@ const loading = ref(false)
 const refreshing = ref(false)
 const currentPage = ref(1)
 const hasMore = ref(true)
+
+// 滑动和选择模式
+const swipeId = ref(null)
+const swipeX = ref(0)
+const selectionMode = ref(false)
+const selectedIds = ref([])
 
 // Tab配置
 const tabs = [
@@ -329,6 +379,156 @@ const formatTime = (time) => {
   const date = new Date(time)
   return `${date.getMonth() + 1}-${date.getDate()}`
 }
+
+// 返回首页（主分类列表）
+const goToHome = () => {
+  uni.switchTab({
+    url: '/pages/tabbar/browse/browse'
+  })
+}
+
+// 触摸开始
+let touchStartX = 0
+let touchStartTime = 0
+const onTouchStart = (e, item) => {
+  if (selectionMode.value) return
+
+  // 如果点击的不是当前已滑动的卡片，则隐藏之前的删除按钮
+  if (swipeId.value && swipeId.value !== item.id) {
+    swipeId.value = null
+    swipeX.value = 0
+  }
+
+  touchStartX = e.touches[0].clientX
+  touchStartTime = Date.now()
+}
+
+// 触摸移动
+const onTouchMove = (e, item) => {
+  if (selectionMode.value) return
+  const touchX = e.touches[0].clientX
+  const deltaX = touchX - touchStartX
+
+  // 左滑显示删除按钮
+  if (deltaX < 0 && deltaX > -150) {
+    swipeId.value = item.id
+    swipeX.value = deltaX
+  }
+  // 右滑隐藏按钮
+  else if (deltaX > 0 && swipeId.value === item.id) {
+    swipeX.value = 0
+    swipeId.value = null
+  }
+}
+
+// 触摸结束
+const onTouchEnd = (e, item) => {
+  if (selectionMode.value) return
+
+  const touchTime = Date.now() - touchStartTime
+
+  // 长按检测（超过500ms）
+  if (touchTime > 500 && Math.abs(swipeX.value) < 10) {
+    enterSelectionMode()
+    return
+  }
+
+  // 滑动检测
+  if (swipeX.value < -60) {
+    swipeId.value = item.id
+    swipeX.value = -120
+  } else {
+    swipeId.value = null
+    swipeX.value = 0
+  }
+}
+
+// 进入选择模式
+const enterSelectionMode = () => {
+  selectionMode.value = true
+  selectedIds.value = []
+  swipeId.value = null
+  swipeX.value = 0
+}
+
+// 退出选择模式
+const exitSelectionMode = () => {
+  selectionMode.value = false
+  selectedIds.value = []
+}
+
+// 切换选择
+const toggleSelection = (item) => {
+  const index = selectedIds.value.indexOf(item.id)
+  if (index > -1) {
+    selectedIds.value.splice(index, 1)
+  } else {
+    selectedIds.value.push(item.id)
+  }
+}
+
+// 删除单个内容
+const deleteSingle = async (item) => {
+  uni.showModal({
+    title: '确认删除',
+    content: `确定要删除"${item.title || item.name}"吗？`,
+    success: async (res) => {
+      if (res.confirm) {
+        try {
+          await contentApi.deleteContent(item.id)
+          uni.showToast({
+            title: '删除成功',
+            icon: 'success'
+          })
+          loadContents(true)
+        } catch (error) {
+          uni.showToast({
+            title: '删除失败',
+            icon: 'none'
+          })
+        }
+      }
+    }
+  })
+  swipeId.value = null
+  swipeX.value = 0
+}
+
+// 批量删除
+const batchDelete = async () => {
+  if (selectedIds.value.length === 0) {
+    uni.showToast({
+      title: '请选择要删除的内容',
+      icon: 'none'
+    })
+    return
+  }
+
+  uni.showModal({
+    title: '确认删除',
+    content: `确定要删除选中的 ${selectedIds.value.length} 项内容吗？`,
+    success: async (res) => {
+      if (res.confirm) {
+        try {
+          await Promise.all(
+            selectedIds.value.map(id => contentApi.deleteContent(id))
+          )
+          uni.showToast({
+            title: '删除成功',
+            icon: 'success'
+          })
+          exitSelectionMode()
+          loadContents(true)
+        } catch (error) {
+          uni.showToast({
+            title: '删除失败',
+            icon: 'none'
+          })
+        }
+      }
+    }
+  })
+}
 </script>
 
 <style scoped>
@@ -349,12 +549,37 @@ const formatTime = (time) => {
   background: #ffffff;
   z-index: 100;
   border-bottom: 1rpx solid rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
 }
 
 .category-breadcrumb {
   display: flex;
   flex-direction: column;
   gap: 8rpx;
+  flex: 1;
+}
+
+.home-button {
+  width: 60rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(0, 196, 179, 0.1);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.home-button:active {
+  background: rgba(0, 196, 179, 0.2);
+  transform: scale(0.95);
+}
+
+.home-icon {
+  font-size: 32rpx;
 }
 
 .main-category-name {
@@ -477,8 +702,13 @@ const formatTime = (time) => {
   padding: 20rpx 30rpx 0;
 }
 
-.note-card {
+.note-card-wrapper {
+  position: relative;
   margin-bottom: 24rpx;
+  overflow: hidden;
+}
+
+.note-card {
   padding: 32rpx;
   background: #ffffff;
   border-radius: 20rpx;
@@ -611,5 +841,106 @@ const formatTime = (time) => {
   color: #ffffff;
   line-height: 1;
   font-weight: 300;
+}
+
+/* 选择框 */
+.checkbox-container {
+  position: absolute;
+  top: 16rpx;
+  left: 16rpx;
+  z-index: 10;
+}
+
+.checkbox {
+  width: 44rpx;
+  height: 44rpx;
+  border: 2rpx solid rgba(0, 196, 179, 0.8);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.checkbox.checked {
+  background: #00c4b3;
+  border-color: #00c4b3;
+}
+
+.checkbox-icon {
+  font-size: 26rpx;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+/* 删除按钮 */
+.delete-button {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 120rpx;
+  background: #ff4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0 20rpx 20rpx 0;
+}
+
+.delete-button:active {
+  opacity: 0.8;
+}
+
+.delete-text {
+  font-size: 28rpx;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+/* 批量操作栏 */
+.batch-toolbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 120rpx;
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20rpx);
+  border-top: 1rpx solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  gap: 20rpx;
+  padding: 20rpx 30rpx;
+  z-index: 100;
+}
+
+.batch-btn {
+  flex: 1;
+  height: 80rpx;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30rpx;
+  font-weight: 500;
+}
+
+.batch-btn.cancel {
+  background: rgba(0, 0, 0, 0.08);
+  color: #333333;
+}
+
+.batch-btn.cancel:active {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.batch-btn.delete {
+  background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+  color: #ffffff;
+}
+
+.batch-btn.delete:active {
+  opacity: 0.8;
 }
 </style>
