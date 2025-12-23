@@ -80,28 +80,36 @@
                   @click.stop="startEdit(category)"
                 >✎</text>
               </view>
-              <text v-if="category.description" class="category-desc">
-                {{ category.description }}
-              </text>
 
-              <!-- 标签和数量 -->
-              <view class="category-footer">
-                <view class="category-tags">
-                  <text
-                    v-for="tag in category.tags?.slice(0, 3)"
-                    :key="tag.id"
-                    class="tag-item"
-                  >
-                    {{ tag.name }}
-                  </text>
+              <view class="category-spacer"></view>
+
+              <view class="category-bottom">
+                <text v-if="category.description" class="category-desc">
+                  {{ category.description }}
+                </text>
+
+                <!-- 标签和数量 -->
+                <view class="category-footer">
+                  <view class="category-tags">
+                    <text
+                      v-for="tag in category.tags?.slice(0, 3)"
+                      :key="tag.id"
+                      class="tag-item"
+                    >
+                      {{ tag.name }}
+                    </text>
+                    <view class="add-tag-btn" @click.stop="addTag(category)">
+                      <text>+ 添加标签</text>
+                    </view>
+                  </view>
+                  <text class="category-count">{{ category.subCategorySize || 0 }} 项</text>
                 </view>
-                <text class="category-count">{{ category.subCategorySize || 0 }} 项</text>
-              </view>
 
-              <!-- 时间信息 -->
-              <view class="category-time">
-                <text class="time-text">创建: {{ formatTime(category.createTime) }}</text>
-                <text class="time-text">修改: {{ formatTime(category.updateTime) }}</text>
+                <!-- 时间信息 -->
+                <view class="category-time">
+                  <text class="time-text">创建: {{ formatTime(category.createTime) }}</text>
+                  <text class="time-text">修改: {{ formatTime(category.updateTime) }}</text>
+                </view>
               </view>
             </view>
           </view>
@@ -444,6 +452,14 @@ const formatTime = (time) => {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
 }
 
+// 添加标签
+const addTag = (category) => {
+  uni.showToast({
+    title: '标签功能开发中',
+    icon: 'none'
+  })
+}
+
 // 页面初始化
 onMounted(() => {
   console.log('Browse page mounted')
@@ -498,6 +514,7 @@ onShow(() => {
   background: #f5f5f5;
   display: flex;
   align-items: center;
+  justify-content: center;
   padding: 0 30rpx;
   z-index: 99;
   border-bottom: 1rpx solid rgba(0, 0, 0, 0.05);
@@ -565,22 +582,34 @@ onShow(() => {
 
 .category-content {
   position: absolute;
+  top: 0;
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 40rpx 30rpx 30rpx;
+  padding: 30rpx;
   z-index: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.category-spacer {
+  flex: 1;
+}
+
+.category-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
 }
 
 .category-name-row {
   display: flex;
   align-items: center;
   gap: 12rpx;
-  margin-bottom: 16rpx;
 }
 
 .category-name {
-  font-size: 40rpx;
+  font-size: 36rpx;
   font-weight: 700;
   color: #ffffff;
   flex: 1;
@@ -606,10 +635,10 @@ onShow(() => {
 
 .category-desc {
   display: block;
-  font-size: 26rpx;
+  font-size: 24rpx;
   color: rgba(255, 255, 255, 0.95);
   text-shadow: 0 1rpx 4rpx rgba(0, 0, 0, 0.3);
-  margin-bottom: 20rpx;
+  margin-bottom: 12rpx;
   line-height: 1.5;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -619,7 +648,7 @@ onShow(() => {
 .category-footer {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-end;
 }
 
 .category-tags {
@@ -627,6 +656,7 @@ onShow(() => {
   flex-wrap: wrap;
   gap: 12rpx;
   flex: 1;
+  align-items: center;
 }
 
 .tag-item {
@@ -637,6 +667,15 @@ onShow(() => {
   font-size: 22rpx;
   color: #ffffff;
   text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.2);
+}
+
+.add-tag-btn {
+  padding: 8rpx 16rpx;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1rpx dashed rgba(255, 255, 255, 0.5);
+  border-radius: 8rpx;
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .category-count {

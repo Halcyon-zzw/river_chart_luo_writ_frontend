@@ -2,7 +2,7 @@
   <view class="sub-list-page">
     <!-- 分类标签 -->
     <view class="category-label-container">
-      <text class="category-label">{{ mainCategoryName }}</text>
+      <text class="category-label">category</text>
     </view>
 
     <!-- 子分类列表 -->
@@ -76,28 +76,36 @@
                   @click.stop="startEdit(subCategory)"
                 >✎</text>
               </view>
-              <text v-if="subCategory.description" class="sub-desc">
-                {{ subCategory.description }}
-              </text>
 
-              <!-- 底部信息 -->
-              <view class="sub-footer">
-                <view class="sub-tags">
-                  <text
-                    v-for="tag in subCategory.tags?.slice(0, 2)"
-                    :key="tag.id"
-                    class="tag-item"
-                  >
-                    {{ tag.name }}
-                  </text>
+              <view class="sub-spacer"></view>
+
+              <view class="sub-bottom">
+                <text v-if="subCategory.description" class="sub-desc">
+                  {{ subCategory.description }}
+                </text>
+
+                <!-- 底部信息 -->
+                <view class="sub-footer">
+                  <view class="sub-tags">
+                    <text
+                      v-for="tag in subCategory.tags?.slice(0, 2)"
+                      :key="tag.id"
+                      class="tag-item"
+                    >
+                      {{ tag.name }}
+                    </text>
+                    <view class="add-tag-btn" @click.stop="addTag(subCategory)">
+                      <text>+ 添加标签</text>
+                    </view>
+                  </view>
+                  <text class="sub-count">{{ subCategory.contentSize || 0 }} 项</text>
                 </view>
-                <text class="sub-count">{{ subCategory.contentSize || 0 }} 项</text>
-              </view>
 
-              <!-- 时间信息 -->
-              <view class="sub-time">
-                <text class="time-text">创建: {{ formatTime(subCategory.createTime) }}</text>
-                <text class="time-text">修改: {{ formatTime(subCategory.updateTime) }}</text>
+                <!-- 时间信息 -->
+                <view class="sub-time">
+                  <text class="time-text">创建: {{ formatTime(subCategory.createTime) }}</text>
+                  <text class="time-text">修改: {{ formatTime(subCategory.updateTime) }}</text>
+                </view>
               </view>
             </view>
           </view>
@@ -466,6 +474,14 @@ const formatTime = (time) => {
   const date = new Date(time)
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
 }
+
+// 添加标签
+const addTag = (subCategory) => {
+  uni.showToast({
+    title: '标签功能开发中',
+    icon: 'none'
+  })
+}
 </script>
 
 <style scoped>
@@ -484,19 +500,16 @@ const formatTime = (time) => {
   background: #ffffff;
   display: flex;
   align-items: center;
+  justify-content: center;
   padding: 0 30rpx;
   z-index: 99;
   border-bottom: 1rpx solid rgba(0, 0, 0, 0.08);
 }
 
 .category-label {
-  font-size: 32rpx;
-  color: #333333;
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 100%;
+  font-size: 28rpx;
+  color: #666666;
+  font-weight: 500;
 }
 
 /* 滚动容器 */
@@ -554,22 +567,34 @@ const formatTime = (time) => {
 
 .sub-content {
   position: absolute;
+  top: 0;
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 30rpx;
+  padding: 24rpx;
   z-index: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.sub-spacer {
+  flex: 1;
+}
+
+.sub-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
 }
 
 .sub-name-row {
   display: flex;
   align-items: center;
   gap: 12rpx;
-  margin-bottom: 10rpx;
 }
 
 .sub-name {
-  font-size: 36rpx;
+  font-size: 32rpx;
   font-weight: 700;
   color: #ffffff;
   text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.3);
@@ -596,9 +621,9 @@ const formatTime = (time) => {
 
 .sub-desc {
   display: block;
-  font-size: 24rpx;
+  font-size: 22rpx;
   color: #ffffff;
-  margin-bottom: 16rpx;
+  margin-bottom: 10rpx;
   line-height: 1.4;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -609,13 +634,15 @@ const formatTime = (time) => {
 .sub-footer {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-end;
 }
 
 .sub-tags {
   display: flex;
   gap: 10rpx;
   flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 .tag-item {
@@ -625,6 +652,15 @@ const formatTime = (time) => {
   border-radius: 6rpx;
   font-size: 20rpx;
   color: #ffffff;
+}
+
+.add-tag-btn {
+  padding: 6rpx 14rpx;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1rpx dashed rgba(255, 255, 255, 0.5);
+  border-radius: 6rpx;
+  font-size: 20rpx;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .sub-count {
