@@ -96,6 +96,15 @@
       <view class="bottom-placeholder"></view>
     </scroll-view>
 
+    <!-- 标签选择器 -->
+    <tag-selector
+      :visible="showTagSelector"
+      :selectedTagIds="selectedTagIds"
+      @update:visible="showTagSelector = $event"
+      @confirm="handleTagConfirm"
+      @cancel="handleTagCancel"
+    />
+
     <!-- 底部按钮 -->
     <view class="bottom-actions">
       <view class="action-btn cancel" @click="cancel">
@@ -109,11 +118,12 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
-import { contentApi } from '@/api'
+import { ref, reactive, computed } from 'vue'
+import { onLoad, onBackPress } from '@dcloudio/uni-app'
+import { contentApi, tagApi } from '@/api'
 import { useCategoryStore } from '@/store/category'
 import config from '@/utils/config'
+import TagSelector from '@/components/tag-selector/tag-selector.vue'
 
 // 数据
 const contentId = ref('')
@@ -122,6 +132,12 @@ const maxImages = config.IMAGE_MAX_COUNT
 const imageList = ref([])
 const selectedSubCategory = ref(null)
 const selectedTags = ref([])
+const submitting = ref(false)
+const savedSuccessfully = ref(false) // 标记是否成功保存
+
+// 标签相关
+const showTagSelector = ref(false)
+const selectedTagIds = ref([])
 
 const formData = reactive({
   name: '',
@@ -130,27 +146,91 @@ const formData = reactive({
   mainCategoryId: ''
 })
 
+// 初始数据快照（用于检测修改）
+const initialSnapshot = ref({
+  name: '',
+  description: '',
+  imageUrls: [],
+  tagIds: []
+})
+
+// 检测是否有修改
+const hasModified = computed(() => {
+  // 检查表单字段
+  if (formData.name.trim() !== initialSnapshot.value.name) return true
+  if (formData.description.trim() !== initialSnapshot.value.description) return true
+
+  // 检查图片
+  const currentImageUrls = imageList.value.map(img => img.url).sort().join(',')
+  const initialImageUrls = initialSnapshot.value.imageUrls.sort().join(',')
+  if (currentImageUrls !== initialImageUrls) return true
+
+  // 检查标签
+  const currentTagIds = selectedTags.value.map(t => t.id).sort().join(',')
+  const initialTagIds = initialSnapshot.value.tagIds.sort().join(',')
+  if (currentTagIds !== initialTagIds) return true
+
+  return false
+})
+
 // 页面加载
 onLoad((options) => {
   if (options.id) {
     contentId.value = options.id
     isEdit.value = options.mode === 'edit'
     loadContentDetail()
-  }
-
-  if (options.subCategoryId) {
-    formData.subCategoryId = options.subCategoryId
-    // 从store获取子分类信息
-    const categoryStore = useCategoryStore()
-    if (categoryStore.currentSubCategory) {
-      selectedSubCategory.value = categoryStore.currentSubCategory
+  } else {
+    // 新建模式
+    if (options.subCategoryId) {
+      formData.subCategoryId = options.subCategoryId
+      // 从store获取子分类信息
+      const categoryStore = useCategoryStore()
+      if (categoryStore.currentSubCategory) {
+        selectedSubCategory.value = categoryStore.currentSubCategory
+      }
     }
-  }
 
-  if (options.mainCategoryId) {
-    formData.mainCategoryId = options.mainCategoryId
+    if (options.mainCategoryId) {
+      formData.mainCategoryId = options.mainCategoryId
+    }
+
+    // 保存初始空快照
+    saveInitialSnapshot()
   }
 })
+
+// 拦截返回按钮
+onBackPress(() => {
+  // 如果已成功保存或正在提交，允许返回
+  if (savedSuccessfully.value || submitting.value) {
+    return false
+  }
+
+  // 如果有未保存的修改，显示确认对话框
+  if (hasModified.value) {
+    uni.showModal({
+      title: '提示',
+      content: '您有未保存的修改，确定要离开吗？',
+      success: (res) => {
+        if (res.confirm) {
+          uni.navigateBack()
+        }
+      }
+    })
+    return true // 阻止默认返回行为
+  }
+  return false // 允许返回
+})
+
+// 保存初始数据快照
+const saveInitialSnapshot = () => {
+  initialSnapshot.value = {
+    name: formData.name.trim(),
+    description: formData.description.trim(),
+    imageUrls: imageList.value.map(img => img.url),
+    tagIds: selectedTags.value.map(t => t.id)
+  }
+}
 
 // 加载内容详情（编辑模式）
 const loadContentDetail = async () => {
@@ -178,6 +258,9 @@ const loadContentDetail = async () => {
     if (detail.tagDTOList) {
       selectedTags.value = detail.tagDTOList
     }
+
+    // 保存初始快照
+    saveInitialSnapshot()
   } catch (error) {
     console.error('Load content detail error:', error)
   }
@@ -217,10 +300,18 @@ const removeImage = (index) => {
 
 // 选择标签
 const selectTags = () => {
-  uni.showToast({
-    title: '标签选择功能开发中',
-    icon: 'none'
-  })
+  selectedTagIds.value = selectedTags.value.map(tag => tag.id)
+  showTagSelector.value = true
+}
+
+// 标签确认
+const handleTagConfirm = (tags) => {
+  selectedTags.value = tags
+}
+
+// 标签取消
+const handleTagCancel = () => {
+  // 不做任何操作
 }
 
 // 移除标签
@@ -288,19 +379,25 @@ const uploadImages = async () => {
 
 // 取消
 const cancel = () => {
-  uni.showModal({
-    title: '提示',
-    content: '确定要取消吗？未保存的内容将丢失',
-    success: (res) => {
-      if (res.confirm) {
-        uni.navigateBack()
+  if (hasModified.value) {
+    uni.showModal({
+      title: '提示',
+      content: '您有未保存的修改，确定要离开吗？',
+      success: (res) => {
+        if (res.confirm) {
+          uni.navigateBack()
+        }
       }
-    }
-  })
+    })
+  } else {
+    uni.navigateBack()
+  }
 }
 
 // 提交
 const submit = async () => {
+  if (submitting.value) return
+
   // 验证
   if (imageList.value.length === 0) {
     uni.showToast({
@@ -326,6 +423,8 @@ const submit = async () => {
     return
   }
 
+  submitting.value = true
+
   try {
     uni.showLoading({
       title: '处理中...',
@@ -343,7 +442,7 @@ const submit = async () => {
       mainCategoryId: formData.mainCategoryId,
       contentType: 'image',
       imageUrl: imageUrls.join(','),
-      tagIds: selectedTags.value.map(tag => tag.id)
+      tagIdList: selectedTags.value.map(tag => tag.id)
     }
 
     if (isEdit.value) {
@@ -360,6 +459,9 @@ const submit = async () => {
       })
     }
 
+    // 标记为成功保存，允许正常返回
+    savedSuccessfully.value = true
+
     setTimeout(() => {
       uni.navigateBack()
     }, 1500)
@@ -371,6 +473,7 @@ const submit = async () => {
     })
   } finally {
     uni.hideLoading()
+    submitting.value = false
   }
 }
 </script>

@@ -89,6 +89,15 @@
       <view class="bottom-placeholder"></view>
     </scroll-view>
 
+    <!-- 标签选择器 -->
+    <tag-selector
+      :visible="showTagSelector"
+      :selectedTagIds="selectedTagIds"
+      @update:visible="showTagSelector = $event"
+      @confirm="handleTagConfirm"
+      @cancel="handleTagCancel"
+    />
+
     <!-- 编辑器工具栏 -->
     <view class="toolbar">
       <scroll-view class="toolbar-scroll" scroll-x>
@@ -133,10 +142,11 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
-import { contentApi } from '@/api'
+import { onLoad, onBackPress } from '@dcloudio/uni-app'
+import { contentApi, tagApi } from '@/api'
 import { useCategoryStore } from '@/store/category'
 import config from '@/utils/config'
+import TagSelector from '@/components/tag-selector/tag-selector.vue'
 
 // 数据
 const contentId = ref('')
@@ -145,6 +155,12 @@ const editorCtx = ref(null)
 const selectedSubCategory = ref(null)
 const selectedTags = ref([])
 const hasModified = ref(false)
+const submitting = ref(false)
+const savedSuccessfully = ref(false) // 标记是否成功保存
+
+// 标签相关
+const showTagSelector = ref(false)
+const selectedTagIds = ref([])
 
 // 折叠状态
 const sectionExpanded = reactive({
@@ -190,6 +206,29 @@ onLoad((options) => {
   })
 })
 
+// 拦截返回按钮
+onBackPress(() => {
+  // 如果已成功保存或正在提交，允许返回
+  if (savedSuccessfully.value || submitting.value) {
+    return false
+  }
+
+  // 如果有未保存的修改，显示确认对话框
+  if (hasModified.value) {
+    uni.showModal({
+      title: '提示',
+      content: '您有未保存的修改，确定要离开吗？',
+      success: (res) => {
+        if (res.confirm) {
+          uni.navigateBack()
+        }
+      }
+    })
+    return true // 阻止默认返回行为
+  }
+  return false // 允许返回
+})
+
 // 编辑器就绪
 const onEditorReady = () => {
   uni.createSelectorQuery()
@@ -229,6 +268,9 @@ const loadContentDetail = async () => {
     if (detail.tagDTOList) {
       selectedTags.value = detail.tagDTOList
     }
+
+    // 重置修改标记（加载完成后，用户还没有做任何修改）
+    hasModified.value = false
   } catch (error) {
     console.error('Load content detail error:', error)
   }
@@ -284,10 +326,18 @@ const insertDivider = () => {
 
 // 选择标签
 const selectTags = () => {
-  uni.showToast({
-    title: '标签选择功能开发中',
-    icon: 'none'
-  })
+  selectedTagIds.value = selectedTags.value.map(tag => tag.id)
+  showTagSelector.value = true
+}
+
+// 标签确认
+const handleTagConfirm = (tags) => {
+  selectedTags.value = tags
+}
+
+// 标签取消
+const handleTagCancel = () => {
+  // 不做任何操作
 }
 
 // 切换折叠状态
@@ -320,6 +370,8 @@ const cancel = () => {
 
 // 提交
 const submit = async () => {
+  if (submitting.value) return
+
   // 验证
   if (!formData.name.trim()) {
     uni.showToast({
@@ -337,6 +389,8 @@ const submit = async () => {
     return
   }
 
+  submitting.value = true
+
   // 获取编辑器内容
   if (editorCtx.value) {
     editorCtx.value.getContents({
@@ -346,6 +400,7 @@ const submit = async () => {
             title: '请输入内容',
             icon: 'none'
           })
+          submitting.value = false
           return
         }
 
@@ -363,7 +418,7 @@ const submit = async () => {
             mainCategoryId: formData.mainCategoryId,
             contentType: 'note',
             noteContent: res.html,
-            tagIds: selectedTags.value.map(tag => tag.id)
+            tagIdList: selectedTags.value.map(tag => tag.id)
           }
 
           if (isEdit.value) {
@@ -380,6 +435,9 @@ const submit = async () => {
             })
           }
 
+          // 标记为成功保存，允许正常返回
+          savedSuccessfully.value = true
+
           setTimeout(() => {
             uni.navigateBack()
           }, 1500)
@@ -391,9 +449,12 @@ const submit = async () => {
           })
         } finally {
           uni.hideLoading()
+          submitting.value = false
         }
       }
     })
+  } else {
+    submitting.value = false
   }
 }
 </script>

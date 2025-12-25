@@ -25,6 +25,27 @@
       <view class="tab-indicator" :style="{ left: currentTab === 'image' ? '25%' : '75%' }"></view>
     </view>
 
+    <!-- 搜索框 -->
+    <view class="search-container">
+      <view class="search-box">
+        <text class="search-icon">🔍</text>
+        <input
+          class="search-input"
+          v-model="searchKeyword"
+          :placeholder="currentTab === 'image' ? '搜索图片名称' : '搜索文本标题'"
+          @confirm="onSearch"
+        />
+        <text
+          v-if="searchKeyword"
+          class="clear-icon"
+          @click="clearSearch"
+        >✕</text>
+      </view>
+      <view v-if="searchKeyword" class="search-btn" @click="onSearch">
+        <text>搜索</text>
+      </view>
+    </view>
+
     <!-- 内容列表 -->
     <scroll-view
       class="content-scroll"
@@ -109,12 +130,20 @@
             <view class="note-footer">
               <view class="note-tags">
                 <text
-                  v-for="tag in item.tagDTOList?.slice(0, 3)"
+                  v-for="tag in getDisplayTags(item)"
                   :key="tag.id"
                   class="tag-item"
                 >
                   {{ tag.name }}
                 </text>
+                <!-- 展开/收起按钮 - 仅当标签数量大于3时显示 -->
+                <view
+                  v-if="item.tagDTOList && item.tagDTOList.length > 3"
+                  class="tag-expand-btn"
+                  @click.stop="toggleTagsExpand(item.id)"
+                >
+                  <text>{{ expandedTags.has(item.id) ? '' : '...' }}</text>
+                </view>
               </view>
               <text class="note-time">{{ formatTime(item.createTime) }}</text>
             </view>
@@ -184,12 +213,16 @@ const loading = ref(false)
 const refreshing = ref(false)
 const currentPage = ref(1)
 const hasMore = ref(true)
+const searchKeyword = ref('')
 
 // 滑动和选择模式
 const swipeId = ref(null)
 const swipeX = ref(0)
 const selectionMode = ref(false)
 const selectedIds = ref([])
+
+// 标签展开/收起状态
+const expandedTags = ref(new Set())
 
 // Tab配置
 const tabs = [
@@ -208,6 +241,35 @@ let isFirstLoad = true
 const noteContents = computed(() => {
   return contents.value.filter(item => item.contentType === 'note')
 })
+
+// 切换标签展开/收起
+const toggleTagsExpand = (contentId) => {
+  if (expandedTags.value.has(contentId)) {
+    expandedTags.value.delete(contentId)
+  } else {
+    expandedTags.value.add(contentId)
+  }
+  // 触发响应式更新
+  expandedTags.value = new Set(expandedTags.value)
+}
+
+// 获取要显示的标签列表
+const getDisplayTags = (content) => {
+  const tags = content.tagDTOList || []
+  const MAX_DISPLAY = 3
+
+  if (tags.length <= MAX_DISPLAY) {
+    return tags
+  }
+
+  // 如果已展开，返回所有标签
+  if (expandedTags.value.has(content.id)) {
+    return tags
+  }
+
+  // 未展开，返回前3个
+  return tags.slice(0, MAX_DISPLAY)
+}
 
 // 页面加载
 onLoad((options) => {
@@ -268,12 +330,19 @@ const loadContents = async (refresh = false) => {
   loading.value = true
 
   try {
-    const res = await contentApi.getContentList({
+    const params = {
       subCategoryId: subCategoryId.value,
       contentType: currentTab.value,
       pageNum: currentPage.value,
       pageSize: 20
-    })
+    }
+
+    // 添加搜索参数
+    if (searchKeyword.value) {
+      params.title = searchKeyword.value
+    }
+
+    const res = await contentApi.getContentList(params)
 
     // 后端返回格式：data.rows
     const list = res.data?.rows || []
@@ -380,6 +449,24 @@ const formatTime = (time) => {
   return `${date.getMonth() + 1}-${date.getDate()}`
 }
 
+// 搜索处理
+const onSearch = () => {
+  if (!searchKeyword.value.trim()) {
+    uni.showToast({
+      title: '请输入搜索关键词',
+      icon: 'none'
+    })
+    return
+  }
+  loadContents(true)
+}
+
+// 清除搜索
+const clearSearch = () => {
+  searchKeyword.value = ''
+  loadContents(true)
+}
+
 // 返回首页（主分类列表）
 const goToHome = () => {
   uni.switchTab({
@@ -434,9 +521,13 @@ const onTouchEnd = (e, item) => {
   }
 
   // 滑动检测
+  // 动态计算滑动距离：每个按钮100rpx，当前有1个按钮（删除）
+  const buttonCount = 1
+  const swipeDistance = -buttonCount * 100
+
   if (swipeX.value < -60) {
     swipeId.value = item.id
-    swipeX.value = -120
+    swipeX.value = swipeDistance
   } else {
     swipeId.value = null
     swipeX.value = 0
@@ -646,11 +737,75 @@ const batchDelete = async () => {
   z-index: 1;
 }
 
+/* 搜索容器 */
+.search-container {
+  position: fixed;
+  top: calc(188rpx + constant(safe-area-inset-top));
+  top: calc(188rpx + env(safe-area-inset-top));
+  left: 0;
+  right: 0;
+  background: #f5f5f5;
+  padding: 20rpx 30rpx;
+  z-index: 98;
+  display: flex;
+  gap: 20rpx;
+  align-items: center;
+}
+
+.search-box {
+  flex: 1;
+  height: 70rpx;
+  background: #ffffff;
+  border-radius: 35rpx;
+  display: flex;
+  align-items: center;
+  padding: 0 24rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.08);
+}
+
+.search-icon {
+  font-size: 32rpx;
+  margin-right: 16rpx;
+}
+
+.search-input {
+  flex: 1;
+  font-size: 28rpx;
+  color: #333333;
+}
+
+.clear-icon {
+  font-size: 32rpx;
+  color: #999999;
+  padding: 0 8rpx;
+}
+
+.search-btn {
+  height: 70rpx;
+  padding: 0 32rpx;
+  background: linear-gradient(135deg, #00c4b3 0%, #00a99d 100%);
+  border-radius: 35rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4rpx 16rpx rgba(0, 196, 179, 0.3);
+}
+
+.search-btn text {
+  font-size: 28rpx;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.search-btn:active {
+  opacity: 0.8;
+}
+
 /* 滚动容器 */
 .content-scroll {
   height: 100vh;
-  padding-top: calc(188rpx + constant(safe-area-inset-top));
-  padding-top: calc(188rpx + env(safe-area-inset-top));
+  padding-top: calc(298rpx + constant(safe-area-inset-top));
+  padding-top: calc(298rpx + env(safe-area-inset-top));
 }
 
 /* 瀑布流 */
@@ -760,6 +915,20 @@ const batchDelete = async () => {
   border-radius: 6rpx;
   font-size: 20rpx;
   color: #00c4b3;
+}
+
+.tag-expand-btn {
+  padding: 6rpx 14rpx;
+  background: rgba(0, 196, 179, 0.15);
+  border-radius: 6rpx;
+  font-size: 20rpx;
+  color: #00c4b3;
+  min-width: 40rpx;
+  text-align: center;
+}
+
+.tag-expand-btn:active {
+  background: rgba(0, 196, 179, 0.25);
 }
 
 .note-time {
@@ -879,7 +1048,7 @@ const batchDelete = async () => {
   right: 0;
   top: 0;
   bottom: 0;
-  width: 120rpx;
+  width: 100rpx;
   background: #ff4444;
   display: flex;
   align-items: center;

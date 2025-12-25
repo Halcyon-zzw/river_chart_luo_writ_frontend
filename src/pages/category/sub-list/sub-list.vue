@@ -8,6 +8,27 @@
       </view>
     </view>
 
+    <!-- 搜索框 -->
+    <view class="search-container">
+      <view class="search-box">
+        <text class="search-icon">🔍</text>
+        <input
+          class="search-input"
+          v-model="searchKeyword"
+          placeholder="搜索子分类名称"
+          @confirm="onSearch"
+        />
+        <text
+          v-if="searchKeyword"
+          class="clear-icon"
+          @click="clearSearch"
+        >✕</text>
+      </view>
+      <view v-if="searchKeyword" class="search-btn" @click="onSearch">
+        <text>搜索</text>
+      </view>
+    </view>
+
     <!-- 子分类列表 -->
     <scroll-view
       class="sub-scroll"
@@ -90,16 +111,48 @@
                 <!-- 底部信息 -->
                 <view class="sub-footer">
                   <view class="sub-tags">
-                    <text
-                      v-for="tag in subCategory.tagDTOList?.slice(0, 2)"
-                      :key="tag.id"
-                      class="tag-item"
+                    <!-- 没有标签时显示添加标签 -->
+                    <view
+                      v-if="!subCategory.tagDTOList || subCategory.tagDTOList.length === 0"
+                      class="add-tag-btn"
+                      @click.stop="addTag(subCategory)"
                     >
-                      {{ tag.name }}
-                    </text>
-                    <view class="add-tag-btn" @click.stop="addTag(subCategory)">
-                      <text>+ 添加标签</text>
+                      <text>添加标签</text>
                     </view>
+
+                    <!-- 有标签时显示标签列表 -->
+                    <template v-else>
+                      <view
+                        v-for="tag in getDisplayTags(subCategory)"
+                        :key="tag.id"
+                        class="tag-item-wrapper"
+                        @longpress="enterTagDeleteMode(subCategory, tag)"
+                        @click.stop="handleTagClick"
+                      >
+                        <text class="tag-item">
+                          {{ tag.name }}
+                        </text>
+                        <text
+                          v-if="tagDeleteMode && currentSubCategory?.id === subCategory.id"
+                          class="tag-remove-icon"
+                          @click.stop="removeTagAssociation(subCategory, tag)"
+                        >✕</text>
+                      </view>
+
+                      <!-- 展开/收起按钮 - 只在标签数量>3时显示 -->
+                      <view
+                        v-if="subCategory.tagDTOList.length > 3"
+                        class="tag-expand-btn"
+                        @click.stop="toggleTagsExpand(subCategory.id)"
+                      >
+                        <text>{{ expandedTags.has(subCategory.id) ? '' : '...' }}</text>
+                      </view>
+
+                      <!-- 添加标签按钮 -->
+                      <view class="add-tag-btn-small" @click.stop="addTag(subCategory)">
+                        <text>+</text>
+                      </view>
+                    </template>
                   </view>
                   <text class="sub-count">{{ subCategory.contentSize || 0 }} 项</text>
                 </view>
@@ -117,7 +170,7 @@
           <view v-if="swipeId === subCategory.id" class="swipe-buttons">
             <!-- 编辑按钮 -->
             <view class="edit-button" @click.stop="handleSwipeEdit(subCategory)">
-              <text class="button-text">✎</text>
+              <text class="edit-icon">✎</text>
             </view>
             <!-- 删除按钮 -->
             <view
@@ -159,6 +212,15 @@
         <text>删除 ({{ selectedIds.length }})</text>
       </view>
     </view>
+
+    <!-- 标签选择器 -->
+    <tag-selector
+      :visible="showTagSelector"
+      :selectedTagIds="currentSubCategoryTagIds"
+      @update:visible="showTagSelector = $event"
+      @confirm="handleTagConfirm"
+      @cancel="handleTagCancel"
+    />
   </view>
 </template>
 
@@ -166,7 +228,8 @@
 import { ref, onMounted } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { useCategoryStore } from '@/store/category'
-import { categoryApi } from '@/api'
+import { categoryApi, tagApi } from '@/api'
+import TagSelector from '@/components/tag-selector/tag-selector.vue'
 
 const categoryStore = useCategoryStore()
 
@@ -180,6 +243,7 @@ const currentPage = ref(1)
 const hasMore = ref(true)
 const editingId = ref(null)
 const editingName = ref('')
+const searchKeyword = ref('')
 let isFirstLoad = true
 
 // 滑动和选择模式
@@ -187,6 +251,17 @@ const swipeId = ref(null)
 const swipeX = ref(0)
 const selectionMode = ref(false)
 const selectedIds = ref([])
+
+// 标签选择器
+const showTagSelector = ref(false)
+const currentSubCategory = ref(null)
+const currentSubCategoryTagIds = ref([])
+
+// 标签删除模式
+const tagDeleteMode = ref(false)
+
+// 标签展开状态 - 记录每个分类的标签是否展开
+const expandedTags = ref(new Set())
 
 // 页面加载参数
 onLoad((options) => {
@@ -226,11 +301,18 @@ const loadSubCategories = async (refresh = false) => {
   loading.value = true
 
   try {
-    const res = await categoryApi.getSubCategories({
+    const params = {
       mainCategoryId: mainCategoryId.value,
       pageNum: currentPage.value,
       pageSize: 20
-    })
+    }
+
+    // 添加搜索参数
+    if (searchKeyword.value) {
+      params.name = searchKeyword.value
+    }
+
+    const res = await categoryApi.getSubCategories(params)
 
     // 后端返回格式：data.rows
     const list = res.data?.rows || []
@@ -331,6 +413,35 @@ const saveEdit = async (subCategory) => {
   }
 }
 
+// 切换标签展开状态
+const toggleTagsExpand = (subCategoryId) => {
+  if (expandedTags.value.has(subCategoryId)) {
+    expandedTags.value.delete(subCategoryId)
+  } else {
+    expandedTags.value.add(subCategoryId)
+  }
+  // 触发响应式更新
+  expandedTags.value = new Set(expandedTags.value)
+}
+
+// 获取要显示的标签列表
+const getDisplayTags = (subCategory) => {
+  const tags = subCategory.tagDTOList || []
+  const MAX_DISPLAY = 3
+
+  if (tags.length <= MAX_DISPLAY) {
+    return tags
+  }
+
+  // 如果已展开，返回所有标签
+  if (expandedTags.value.has(subCategory.id)) {
+    return tags
+  }
+
+  // 未展开，只返回前3个
+  return tags.slice(0, MAX_DISPLAY)
+}
+
 // 触摸开始
 let touchStartX = 0
 let touchStartTime = 0
@@ -378,9 +489,13 @@ const onTouchEnd = (e, subCategory) => {
   }
 
   // 滑动检测
+  // 动态计算滑动距离：每个按钮100rpx，当前有2个按钮（编辑+删除）
+  const buttonCount = 2
+  const swipeDistance = -buttonCount * 100
+
   if (swipeX.value < -80) {
     swipeId.value = subCategory.id
-    swipeX.value = -200
+    swipeX.value = swipeDistance
   } else {
     swipeId.value = null
     swipeX.value = 0
@@ -508,10 +623,99 @@ const formatTime = (time) => {
 
 // 添加标签
 const addTag = (subCategory) => {
-  uni.showToast({
-    title: '标签功能开发中',
-    icon: 'none'
-  })
+  currentSubCategory.value = subCategory
+  currentSubCategoryTagIds.value = (subCategory.tagDTOList || []).map(tag => tag.id)
+  showTagSelector.value = true
+}
+
+// 确认标签选择
+const handleTagConfirm = async (selectedTags) => {
+  if (!currentSubCategory.value) return
+
+  try {
+    const tagIds = selectedTags.map(tag => tag.id)
+
+    // 调用批量关联接口
+    await tagApi.batchLinkSubCategory({
+      subCategoryId: currentSubCategory.value.id,
+      tagIds: tagIds
+    })
+
+    // 更新本地数据
+    currentSubCategory.value.tagDTOList = selectedTags
+
+    uni.showToast({
+      title: '标签更新成功',
+      icon: 'success'
+    })
+  } catch (error) {
+    console.error('Update tags error:', error)
+    uni.showToast({
+      title: '标签更新失败',
+      icon: 'none'
+    })
+  }
+}
+
+// 取消标签选择
+const handleTagCancel = () => {
+  currentSubCategory.value = null
+  currentSubCategoryTagIds.value = []
+}
+
+// 进入标签删除模式
+const enterTagDeleteMode = (subCategory, tag) => {
+  currentSubCategory.value = subCategory
+  tagDeleteMode.value = true
+}
+
+// 处理标签点击（防止误触发）
+const handleTagClick = () => {
+  // 点击标签不做任何操作，只有长按才进入删除模式
+}
+
+// 删除标签关联
+const removeTagAssociation = async (subCategory, tag) => {
+  try {
+    // 更新本地数据
+    const index = subCategory.tagDTOList.findIndex(t => t.id === tag.id)
+    if (index > -1) {
+      subCategory.tagDTOList.splice(index, 1)
+    }
+
+    // 退出删除模式
+    tagDeleteMode.value = false
+    currentSubCategory.value = null
+
+    uni.showToast({
+      title: '标签已移除',
+      icon: 'success'
+    })
+  } catch (error) {
+    console.error('Remove tag error:', error)
+    uni.showToast({
+      title: '移除失败',
+      icon: 'none'
+    })
+  }
+}
+
+// 搜索处理
+const onSearch = () => {
+  if (!searchKeyword.value.trim()) {
+    uni.showToast({
+      title: '请输入搜索关键词',
+      icon: 'none'
+    })
+    return
+  }
+  loadSubCategories(true)
+}
+
+// 清除搜索
+const clearSearch = () => {
+  searchKeyword.value = ''
+  loadSubCategories(true)
 }
 
 // 返回首页（主分类列表）
@@ -571,10 +775,73 @@ const goToHome = () => {
   font-size: 32rpx;
 }
 
+/* 搜索容器 */
+.search-container {
+  position: fixed;
+  top: 88rpx;
+  left: 0;
+  right: 0;
+  background: #f5f5f5;
+  padding: 20rpx 30rpx;
+  z-index: 98;
+  display: flex;
+  gap: 20rpx;
+  align-items: center;
+}
+
+.search-box {
+  flex: 1;
+  height: 70rpx;
+  background: #ffffff;
+  border-radius: 35rpx;
+  display: flex;
+  align-items: center;
+  padding: 0 24rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.08);
+}
+
+.search-icon {
+  font-size: 32rpx;
+  margin-right: 16rpx;
+}
+
+.search-input {
+  flex: 1;
+  font-size: 28rpx;
+  color: #333333;
+}
+
+.clear-icon {
+  font-size: 32rpx;
+  color: #999999;
+  padding: 0 8rpx;
+}
+
+.search-btn {
+  height: 70rpx;
+  padding: 0 32rpx;
+  background: linear-gradient(135deg, #00c4b3 0%, #00a99d 100%);
+  border-radius: 35rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4rpx 16rpx rgba(0, 196, 179, 0.3);
+}
+
+.search-btn text {
+  font-size: 28rpx;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.search-btn:active {
+  opacity: 0.8;
+}
+
 /* 滚动容器 */
 .sub-scroll {
   height: 100vh;
-  padding-top: 88rpx;
+  padding-top: 198rpx;
 }
 
 .sub-container {
@@ -704,6 +971,12 @@ const goToHome = () => {
   align-items: center;
 }
 
+.tag-item-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
 .tag-item {
   padding: 6rpx 14rpx;
   background: rgba(255, 255, 255, 0.25);
@@ -713,6 +986,23 @@ const goToHome = () => {
   color: #ffffff;
 }
 
+.tag-remove-icon {
+  position: absolute;
+  top: -6rpx;
+  right: -6rpx;
+  width: 26rpx;
+  height: 26rpx;
+  background: #ff4444;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16rpx;
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 2rpx 8rpx rgba(255, 68, 68, 0.4);
+}
+
 .add-tag-btn {
   padding: 6rpx 14rpx;
   background: rgba(255, 255, 255, 0.15);
@@ -720,6 +1010,31 @@ const goToHome = () => {
   border-radius: 6rpx;
   font-size: 20rpx;
   color: rgba(255, 255, 255, 0.8);
+}
+
+.add-tag-btn-small {
+  padding: 6rpx 14rpx;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1rpx dashed rgba(255, 255, 255, 0.5);
+  border-radius: 6rpx;
+  font-size: 20rpx;
+  color: rgba(255, 255, 255, 0.8);
+  min-width: 40rpx;
+  text-align: center;
+}
+
+.tag-expand-btn {
+  padding: 6rpx 14rpx;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 6rpx;
+  font-size: 20rpx;
+  color: rgba(255, 255, 255, 0.8);
+  min-width: 40rpx;
+  text-align: center;
+}
+
+.tag-expand-btn:active {
+  background: rgba(255, 255, 255, 0.25);
 }
 
 .sub-count {

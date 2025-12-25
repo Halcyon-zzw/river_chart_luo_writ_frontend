@@ -77,6 +77,10 @@ TabBar 页面（4 个标签）
 - API_BASE_URL: `http://localhost:8080`
 - 默认超时：10 秒（在请求拦截器中配置）
 
+**API 文档：**
+- 在线文档：https://github.com/Halcyon-zzw/river_chart_luo_writ/blob/feat_page/docs/river_chart_luo_writ.json
+- 本地文档：`src/demand/river_chart_luo_writ.json`（OpenAPI 3.0 格式）
+
 **API 模块：** `src/api/`
 - `request.js` - HTTP 封装，包含拦截器（token、loading、错误处理）
 - `category.js` - 主分类/子分类 CRUD
@@ -84,6 +88,36 @@ TabBar 页面（4 个标签）
 - `tag.js` - 标签管理
 - `collection.js` - 用户收藏
 - `user.js` - 认证
+
+**搜索/分页接口：**
+```javascript
+// 主分类分页 - POST /main-category/page
+{
+  pageNum: 1,
+  pageSize: 20,
+  name: '搜索关键词'  // 可选，支持模糊搜索
+}
+
+// 子分类分页 - POST /sub-category/page
+{
+  pageNum: 1,
+  pageSize: 20,
+  mainCategoryId: 123,  // 必填
+  name: '搜索关键词'     // 可选
+}
+
+// 内容分页 - POST /content/page
+{
+  pageNum: 1,
+  pageSize: 20,
+  subCategoryId: 456,    // 必填
+  contentType: 'note',   // 可选：'image' 或 'note'
+  title: '搜索关键词'     // 可选，搜索标题
+}
+
+// 标签查询 - GET /tag/query?name=xxx
+// 支持模糊搜索标签名称
+```
 
 **关键 API 字段约定：**
 后端返回的标签数组字段名为 `tagDTOList`（而不是 `tags`）。务必使用：
@@ -102,6 +136,19 @@ item.tags        // 错误 - 不会工作
 - 右滑或点击其他地方：隐藏按钮
 - 触摸处理器：`onTouchStart`、`onTouchMove`、`onTouchEnd`
 - 状态：`swipeId`（当前滑动的项）、`swipeX`（平移距离）
+- **编辑图标规范**：使用笔头向左的图标（通过 CSS transform: scaleX(-1) 实现水平翻转）
+- **动态滑动距离**：根据显示的操作按钮数量动态计算滑动距离
+  ```javascript
+  // 每个按钮宽度为 100rpx
+  const buttonCount = 2  // 编辑 + 删除
+  const swipeDistance = -buttonCount * 100  // -200rpx
+
+  // 在 onTouchEnd 中应用
+  if (swipeX.value < -80) {
+    swipeX.value = swipeDistance
+  }
+  ```
+  如果只有1个按钮（如仅删除），则 `swipeDistance = -100rpx`；如果有3个按钮，则 `-300rpx`。
 
 **长按批量操作：**
 - 长按（>500ms）进入选择模式
@@ -111,6 +158,46 @@ item.tags        // 错误 - 不会工作
 
 **内容类型标签：**
 内容列表页有图片/笔记标签。查询参数：`contentType: 'image' | 'note'`
+
+**标签管理：**
+所有列表页（主分类、子分类、内容）和创建/编辑页都支持标签功能：
+
+1. **列表页标签删除**：
+   - 长按标签进入删除模式，标签右上角显示 ✕
+   - 点击 ✕ 删除标签关联
+   - 再次长按任意标签退出删除模式
+
+2. **创建/编辑页标签操作**：
+   - 标签右上角默认显示 ✕（无需长按）
+   - 点击"+ 添加标签"打开标签选择器
+   - 标签选择器支持：搜索、多选、创建新标签
+   - 编辑模式下确认选择后立即调用批量关联 API
+
+3. **批量关联 API**：
+   ```javascript
+   // 主分类
+   await tagApi.batchLinkMainCategory({
+     mainCategoryId: id,
+     tagIds: [1, 2, 3]
+   })
+
+   // 子分类
+   await tagApi.batchLinkSubCategory({
+     subCategoryId: id,
+     tagIds: [1, 2, 3]
+   })
+
+   // 内容
+   await tagApi.batchLinkContent({
+     contentId: id,
+     tagIds: [1, 2, 3]
+   })
+   ```
+
+4. **标签选择器组件**（`/src/components/tag-selector/tag-selector.vue`）：
+   - Props: `visible`（显示/隐藏）、`selectedTagIds`（已选标签 ID 数组）
+   - Events: `update:visible`、`confirm`（确认选择，返回标签对象数组）、`cancel`
+   - 功能：搜索标签、创建新标签、多选、显示已选标签并支持删除
 
 ## 重要约定
 
@@ -128,11 +215,25 @@ uni.navigateTo({
   url: `/pages/category/sub-list/sub-list?mainCategoryId=${id}&mainCategoryName=${name}`
 })
 
+// 示例：编辑主分类
+url: `/pages/category/create-main-category/create-main-category?id=${id}&mode=edit`
+
+// 示例：编辑子分类
+url: `/pages/category/create-sub-category/create-sub-category?id=${id}&mode=edit&mainCategoryId=${mainId}`
+
 // 示例：编辑内容
 url: `/pages/content/create-note/create-note?id=${id}&mode=edit&subCategoryId=${subId}`
 ```
 
-使用 `mode=edit` 查询参数区分创建和编辑模式。
+**编辑模式支持**：
+- 使用 `mode=edit` 查询参数区分创建和编辑模式
+- 所有创建页面（create-main-category、create-sub-category、create-note、create-image）都支持编辑模式
+- 编辑模式下：
+  - 页面标题自动更新为"编辑XXX"
+  - 提交按钮文本显示"保存"而非"创建"
+  - onLoad 时自动加载现有数据填充表单
+  - 标签选择确认后立即调用批量关联 API（而不是等到提交时）
+  - 提交时调用 update API 而非 create API
 
 ### 时间显示格式
 ��有时间戳使用：`YYYY-MM-DD HH:mm` 格式
