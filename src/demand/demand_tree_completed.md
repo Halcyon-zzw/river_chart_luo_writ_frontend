@@ -197,3 +197,69 @@
    - ✅ API 封装层（category.js, content.js）
 
 -----------分界线，上述需求已经处理，请忽略------------------
+
+✅ 已处理 - 2025-12-26 (第二批)
+
+**列表页导航栏遮挡修复**
+
+需求：导航页遮住了子分类列表页、内容列表页部分内容
+   状态：已修复
+   - 问题根源：使用自定义导航栏后，页面中固定定位元素的 top 值仍然基于旧的系统导航栏高度（硬编码）
+   - 解决方案：将固定定位改为 flex 弹性布局，让元素自然流式排列
+
+   修复内容：
+   1. **sub-list.vue (子分类列表页)**
+      - 页面容器添加 flex 布局：`display: flex; flex-direction: column`
+      - `.search-container` 删除固定定位 (`position: fixed; top: 88rpx`)
+      - `.sub-scroll` 删除固定高度和 padding-top，改为 `flex: 1`
+
+   2. **content-list.vue (内容列表页)**
+      - 页面容器添加 flex 布局：`display: flex; flex-direction: column`
+      - `.tab-bar` 删除固定定位和 `top: calc(100rpx + safe-area-inset-top)`
+      - `.search-container` 删除固定定位和 `top: calc(188rpx + safe-area-inset-top)`
+      - `.content-scroll` 删除 `padding-top: calc(298rpx + safe-area-inset-top)`，改为 `flex: 1`
+
+   优点：
+   - ✅ 完全自适应，不依赖硬编码高度
+   - ✅ 兼容不同设备的状态栏高度
+   - ✅ 布局更清晰，易维护
+
+**图片删除按钮优化**
+
+需求：上传图片后，图片右上角出现叉，点击叉后可以删除图片
+   状态：已实现
+   - 原实现：删除按钮隐藏在点击时显示的遮罩层中，操作不够直观
+   - 新实现：删除按钮始终显示在图片右上角
+
+   修改内容 (create-image.vue)：
+   1. 模板修改：
+      - 删除 `.image-mask` 遮罩层和内部的操作按钮
+      - 添加独立的 `.delete-btn` 删除按钮，固定在右上角
+      - 图片点击预览功能移至 `.image-item` 容器
+      - 删除按钮使用 `@click.stop` 阻止事件冒泡
+
+   2. 样式修改：
+      ```css
+      .delete-btn {
+        position: absolute;
+        top: 8rpx;
+        right: 8rpx;
+        width: 48rpx;
+        height: 48rpx;
+        background: rgba(0, 0, 0, 0.6);
+        border-radius: 50%;
+        z-index: 10;
+      }
+
+      .delete-icon {
+        font-size: 36rpx;
+        color: #ffffff;
+      }
+      ```
+
+   优点：
+   - ✅ 删除按钮始终可见，操作更直观
+   - ✅ 符合常见的图片管理交互模式
+   - ✅ 减少了交互步骤（不需要先点击才能看到删除按钮）
+
+-----------分界线，上述需求已经处理，请忽略------------------

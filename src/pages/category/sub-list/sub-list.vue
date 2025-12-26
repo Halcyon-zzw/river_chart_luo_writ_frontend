@@ -731,6 +731,8 @@ const goToHome = () => {
 .sub-list-page {
   min-height: 100vh;
   background: #f5f5f5;
+  display: flex;
+  flex-direction: column;
 }
 
 /* 分类标签 */
@@ -778,13 +780,8 @@ const goToHome = () => {
 
 /* 搜索容器 */
 .search-container {
-  position: fixed;
-  top: 88rpx;
-  left: 0;
-  right: 0;
   background: #f5f5f5;
   padding: 20rpx 30rpx;
-  z-index: 98;
   display: flex;
   gap: 20rpx;
   align-items: center;
@@ -841,8 +838,7 @@ const goToHome = () => {
 
 /* 滚动容器 */
 .sub-scroll {
-  height: 100vh;
-  padding-top: 198rpx;
+  flex: 1;
 }
 
 .sub-container {

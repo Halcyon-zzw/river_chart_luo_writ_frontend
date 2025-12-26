@@ -16,17 +16,12 @@
             v-for="(img, index) in imageList"
             :key="index"
             class="image-item"
+            @click="previewImage(index)"
           >
             <image class="upload-image" :src="img.url" mode="aspectFill"></image>
-            <view class="image-mask">
-              <view class="image-actions">
-                <view class="action-icon" @click="previewImage(index)">
-                  <text>👁️</text>
-                </view>
-                <view class="action-icon" @click="removeImage(index)">
-                  <text>🗑️</text>
-                </view>
-              </view>
+            <!-- 删除按钮 -->
+            <view class="delete-btn" @click.stop="removeImage(index)">
+              <text class="delete-icon">✕</text>
             </view>
           </view>
 
@@ -512,39 +507,31 @@ const submit = async () => {
   height: 100%;
 }
 
-.image-mask {
+/* 删除按钮 */
+.delete-btn {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.4);
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.image-item:active .image-mask {
-  opacity: 1;
-}
-
-.image-actions {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  display: flex;
-  gap: 20rpx;
-}
-
-.action-icon {
-  width: 60rpx;
-  height: 60rpx;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 30rpx;
+  top: 8rpx;
+  right: 8rpx;
+  width: 48rpx;
+  height: 48rpx;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32rpx;
+  z-index: 10;
+}
+
+.delete-icon {
+  font-size: 36rpx;
+  color: #ffffff;
+  line-height: 1;
+  font-weight: 300;
+}
+
+.delete-btn:active {
+  background: rgba(0, 0, 0, 0.8);
+  transform: scale(0.95);
 }
 
 .upload-btn {

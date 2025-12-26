@@ -625,6 +625,8 @@ const batchDelete = async () => {
 .content-list-page {
   min-height: 100vh;
   background: #f5f5f5;
+  display: flex;
+  flex-direction: column;
 }
 
 /* 分类标签 */
@@ -688,18 +690,12 @@ const batchDelete = async () => {
 
 /* Tab栏 */
 .tab-bar {
-  position: fixed;
-  top: calc(100rpx + constant(safe-area-inset-top));
-  top: calc(100rpx + env(safe-area-inset-top));
-  left: 0;
-  right: 0;
   height: 88rpx;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20rpx);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 99;
   border-bottom: 1rpx solid rgba(0, 0, 0, 0.08);
 }
 
@@ -738,14 +734,8 @@ const batchDelete = async () => {
 
 /* 搜索容器 */
 .search-container {
-  position: fixed;
-  top: calc(188rpx + constant(safe-area-inset-top));
-  top: calc(188rpx + env(safe-area-inset-top));
-  left: 0;
-  right: 0;
   background: #f5f5f5;
   padding: 20rpx 30rpx;
-  z-index: 98;
   display: flex;
   gap: 20rpx;
   align-items: center;
@@ -802,9 +792,7 @@ const batchDelete = async () => {
 
 /* 滚动容器 */
 .content-scroll {
-  height: 100vh;
-  padding-top: calc(298rpx + constant(safe-area-inset-top));
-  padding-top: calc(298rpx + env(safe-area-inset-top));
+  flex: 1;
 }
 
 /* 瀑布流 */
