@@ -6,12 +6,17 @@
         <view class="form-item">
           <view class="form-label">
             <text class="label-text">所属主分类</text>
+            <text v-if="!isEdit" class="required-mark">*</text>
           </view>
-          <view class="category-display" @click="selectMainCategory">
+          <view
+            class="category-display"
+            :class="{ disabled: isEdit }"
+            @click="selectMainCategory"
+          >
             <text class="category-text" :class="{ placeholder: !mainCategoryName }">
               {{ mainCategoryName || '请选择主分类' }}
             </text>
-            <text class="arrow-icon">›</text>
+            <text v-if="!isEdit" class="arrow-icon">›</text>
           </view>
         </view>
 
@@ -99,6 +104,15 @@
       @confirm="handleTagConfirm"
       @cancel="handleTagCancel"
     />
+
+    <!-- 主分类选择器 -->
+    <main-category-selector
+      :visible="showMainCategorySelector"
+      :selectedId="formData.mainCategoryId"
+      @update:visible="showMainCategorySelector = $event"
+      @confirm="handleMainCategoryConfirm"
+      @cancel="handleMainCategoryCancel"
+    />
   </view>
 </template>
 
@@ -108,6 +122,7 @@ import { onLoad, onBackPress } from '@dcloudio/uni-app'
 import { categoryApi, tagApi } from '@/api'
 import { useCategoryStore } from '@/store/category'
 import TagSelector from '@/components/tag-selector/tag-selector.vue'
+import MainCategorySelector from '@/components/main-category-selector/main-category-selector.vue'
 
 const categoryStore = useCategoryStore()
 
@@ -131,6 +146,9 @@ const savedSuccessfully = ref(false) // 标记是否成功保存
 const showTagSelector = ref(false)
 const selectedTags = ref([])
 const selectedTagIds = ref([])
+
+// 主分类选择器相关
+const showMainCategorySelector = ref(false)
 
 // 初始数据快照（用于检测修改）
 const initialSnapshot = ref({
@@ -271,10 +289,22 @@ const loadSubCategoryDetail = async () => {
 
 // 选择主分类
 const selectMainCategory = () => {
-  uni.showToast({
-    title: '选择主分类功能待开发',
-    icon: 'none'
-  })
+  // 编辑模式下不允许修改主分类
+  if (isEdit.value) {
+    return
+  }
+  showMainCategorySelector.value = true
+}
+
+// 主分类选择确认
+const handleMainCategoryConfirm = (category) => {
+  formData.value.mainCategoryId = category.id
+  mainCategoryName.value = category.name
+}
+
+// 主分类选择取消
+const handleMainCategoryCancel = () => {
+  // 不做任何操作
 }
 
 // 选择封面图
@@ -445,6 +475,15 @@ const handleSubmit = async () => {
 
 .category-display:active {
   background: rgba(0, 196, 179, 0.05);
+}
+
+.category-display.disabled {
+  background: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.category-display.disabled:active {
+  background: #f5f5f5;
 }
 
 .category-text {
