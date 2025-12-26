@@ -1,5 +1,12 @@
 <template>
   <view class="create-category-page">
+    <!-- 自定义导航栏 -->
+    <custom-nav-bar
+      :title="isEdit ? '编辑子分类' : '创建子分类'"
+      :needConfirm="hasModified && !savedSuccessfully && !submitting"
+      confirmText="您有未保存的修改，确定要离开吗？"
+    />
+
     <scroll-view class="form-scroll" scroll-y>
       <view class="form-container">
         <!-- 主分类显示 -->
@@ -118,11 +125,12 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { onLoad, onBackPress } from '@dcloudio/uni-app'
+import { onLoad } from '@dcloudio/uni-app'
 import { categoryApi, tagApi } from '@/api'
 import { useCategoryStore } from '@/store/category'
 import TagSelector from '@/components/tag-selector/tag-selector.vue'
 import MainCategorySelector from '@/components/main-category-selector/main-category-selector.vue'
+import CustomNavBar from '@/components/custom-nav-bar/custom-nav-bar.vue'
 
 const categoryStore = useCategoryStore()
 
@@ -214,34 +222,6 @@ onLoad((options) => {
     // 保存初始空快照
     saveInitialSnapshot()
   }
-
-  // 设置页面标题
-  uni.setNavigationBarTitle({
-    title: isEdit.value ? '编辑子分类' : '创建子分类'
-  })
-})
-
-// 拦截返回按钮
-onBackPress(() => {
-  // 如果已成功保存或正在提交，允许返回
-  if (savedSuccessfully.value || submitting.value) {
-    return false
-  }
-
-  // 如果有未保存的修改，显示确认对话框
-  if (hasModified.value) {
-    uni.showModal({
-      title: '提示',
-      content: '您有未保存的修改，确定要离开吗？',
-      success: (res) => {
-        if (res.confirm) {
-          uni.navigateBack()
-        }
-      }
-    })
-    return true // 阻止默认返回行为
-  }
-  return false // 允许返回
 })
 
 // 保存初始数据快照
@@ -381,7 +361,12 @@ const handleSubmit = async () => {
       })
 
       const uploadRes = await categoryApi.uploadCoverImage(formData.value.coverImage)
-      coverImageUrl = uploadRes.data?.url || uploadRes.data || ''
+      // API 返回 ResultListString 格式：data 是字符串数组
+      if (Array.isArray(uploadRes.data) && uploadRes.data.length > 0) {
+        coverImageUrl = uploadRes.data[0]
+      } else if (typeof uploadRes.data === 'string') {
+        coverImageUrl = uploadRes.data
+      }
 
       uni.hideLoading()
     } else {
@@ -451,6 +436,7 @@ const handleSubmit = async () => {
 
 .form-scroll {
   height: 100vh;
+  box-sizing: border-box;
 }
 
 .form-container {

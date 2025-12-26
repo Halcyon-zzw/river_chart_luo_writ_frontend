@@ -64,9 +64,10 @@ export const categoryApi = {
     return http.post(`/sub-category/${id}/tags`)
   },
 
-  // 上传分类封面图（使用统一的上传接口）
+  // 上传分类封面图（使用内容图片上传接口）
+  // 注意：返回格式为 ResultListString，data 是字符串数组
   uploadCoverImage(filePath) {
-    return http.upload('/file/upload', filePath)
+    return http.upload('/content/upload-images', filePath, 'files')
   }
 }
 

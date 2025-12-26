@@ -31,13 +31,15 @@
 		{
 			"path": "pages/category/sub-list/sub-list",
 			"style": {
-				"navigationBarTitleText": "子分类"
+				"navigationBarTitleText": "子分类",
+				"navigationStyle": "custom"
 			}
 		},
 		{
 			"path": "pages/category/content-list/content-list",
 			"style": {
-				"navigationBarTitleText": "内容"
+				"navigationBarTitleText": "内容",
+				"navigationStyle": "custom"
 			}
 		},
 		{
@@ -56,25 +58,29 @@
 		{
 			"path": "pages/content/create-image/create-image",
 			"style": {
-				"navigationBarTitleText": "上传图片"
+				"navigationBarTitleText": "上传图片",
+				"navigationStyle": "custom"
 			}
 		},
 		{
 			"path": "pages/content/create-note/create-note",
 			"style": {
-				"navigationBarTitleText": "创建笔记"
+				"navigationBarTitleText": "创建笔记",
+				"navigationStyle": "custom"
 			}
 		},
 		{
 			"path": "pages/category/create-main-category/create-main-category",
 			"style": {
-				"navigationBarTitleText": "新建主分类"
+				"navigationBarTitleText": "新建主分类",
+				"navigationStyle": "custom"
 			}
 		},
 		{
 			"path": "pages/category/create-sub-category/create-sub-category",
 			"style": {
-				"navigationBarTitleText": "新建子分类"
+				"navigationBarTitleText": "新建子分类",
+				"navigationStyle": "custom"
 			}
 		}
 	],

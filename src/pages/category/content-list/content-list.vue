@@ -1,15 +1,13 @@
 <template>
   <view class="content-list-page">
-    <!-- 分类标签 -->
-    <view class="category-label-container">
-      <view class="category-breadcrumb">
-        <text class="main-category-name">{{ mainCategoryName }}</text>
-        <text class="sub-category-name">{{ subCategoryName }}</text>
-      </view>
-      <view class="home-button" @click="goToHome">
-        <text class="home-icon">🏠</text>
-      </view>
-    </view>
+    <!-- 自定义导航栏 -->
+    <custom-nav-bar :title="subCategoryName">
+      <template #right>
+        <view class="home-button" @click="goToHome">
+          <text class="home-icon">🏠</text>
+        </view>
+      </template>
+    </custom-nav-bar>
 
     <!-- Tab切换 -->
     <view class="tab-bar">
@@ -202,6 +200,7 @@ import { ref, computed, watch } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { contentApi } from '@/api'
 import { useCategoryStore } from '@/store/category'
+import CustomNavBar from '@/components/custom-nav-bar/custom-nav-bar.vue'
 
 // 数据
 const subCategoryId = ref('')

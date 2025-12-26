@@ -1,12 +1,13 @@
 <template>
   <view class="sub-list-page">
-    <!-- 分类标签 -->
-    <view class="category-label-container">
-      <text class="category-label">{{ mainCategoryName }}</text>
-      <view class="home-button" @click="goToHome">
-        <text class="home-icon">🏠</text>
-      </view>
-    </view>
+    <!-- 自定义导航栏 -->
+    <custom-nav-bar :title="mainCategoryName">
+      <template #right>
+        <view class="home-button" @click="goToHome">
+          <text class="home-icon">🏠</text>
+        </view>
+      </template>
+    </custom-nav-bar>
 
     <!-- 搜索框 -->
     <view class="search-container">

@@ -85,3 +85,115 @@
 参考资料使用的onUnload，为什么实现使用自定义导航栏？
 
 -----------分界线，上述需求已经处理，请忽略------------------
+
+✅ 已处理 - 2025-12-26
+
+**导航栏相关优化**
+
+需求1：自定义导航栏遮挡页面内容
+   状态：已修复
+   - 问题：自定义导航栏使用固定定位，遮挡了页面原本内容
+   - 解决方案：在自定义导航栏组件中添加占位元素，高度等于状态栏高度+导航栏高度
+   - 实现位置：src/components/custom-nav-bar/custom-nav-bar.vue
+   - 新增内容：
+     ```vue
+     <!-- 占位元素，防止内容被导航栏遮挡 -->
+     <view class="nav-bar-placeholder" :style="{ height: totalHeight + 'px' }"></view>
+     ```
+   - totalHeight 计算：statusBarHeight + navBarHeight
+
+需求2：统一列表页导航栏风格
+   状态：已实现
+   - 问题：主分类、子分类、内容列表页顶部导航样式不一致
+   - 解决方案：所有列表页统一使用自定义导航栏组件
+   - 实现内容：
+     * src/pages/category/sub-list/sub-list.vue - 使用自定义导航栏，右侧插槽添加主页按钮
+     * src/pages/category/content-list/content-list.vue - 使用自定义导航栏，右侧插槽添加主页按钮
+   - 修改 pages.json 配置：
+     * sub-list: navigationStyle: "custom"
+     * content-list: navigationStyle: "custom"
+
+需求3：自定义导航栏支持所有返回操作
+   状态：已验证支持
+   - 导航栏返回箭头：✅ 自定义导航栏实现的返回按钮，完全支持
+   - iOS 滑动手势返回：✅ 系统级手势，自定义导航栏不影响
+   - Android 物理返回键：✅ 使用条件编译，App 平台保留 onBackPress 支持
+   - 实现方式：
+     ```javascript
+     // #ifdef APP-PLUS
+     onBackPress(() => {
+       if (savedSuccessfully.value || submitting.value) {
+         return false
+       }
+       if (hasModified.value) {
+         uni.showModal({
+           title: '提示',
+           content: '您有未保存的修改，确定要离开吗？',
+           success: (res) => {
+             if (res.confirm) {
+               uni.navigateBack()
+             }
+           }
+         })
+         return true
+       }
+       return false
+     })
+     // #endif
+     ```
+   - 应用页面：所有创建/编辑页面
+
+**图片上传接口修正**
+
+需求：修正所有图片上传使用错误的接口
+   状态：已全部修复
+   - 问题：多处代码使用了不存在的 `/file/upload` 接口
+   - 正确接口：`/content/upload-images`（API 文档中唯一的上传接口）
+   - API 返回格式：`ResultListString`，data 字段是字符串数组
+
+   修复内容：
+   1. 修改 src/api/request.js 的 upload 方法
+      - 新增 name 参数支持自定义字段名（默认 'file'）
+      - 签名：upload(url, filePath, name = 'file', formData = {}, options = {})
+
+   2. 修复 src/api/category.js
+      - uploadCoverImage：/file/upload → /content/upload-images
+      - 参数名：file → files
+      - 添加返回格式说明注释
+
+   3. 修复 src/api/content.js
+      - uploadImage：/file/upload → /content/upload-images
+      - 参数名：file → files
+      - 添加返回格式说明注释
+
+   4. 修复 src/pages/content/create-image/create-image.vue
+      - 接口：/file/upload → /content/upload-images
+      - 参数名：file → files
+      - 响应解析：修改为正确处理数组格式
+        ```javascript
+        if (Array.isArray(data.data) && data.data.length > 0) {
+          url = data.data[0]
+        } else if (typeof data.data === 'string') {
+          url = data.data
+        } else if (data.url) {
+          url = data.url
+        }
+        ```
+
+   5. 修复 src/pages/content/create-note/create-note.vue
+      - 参数名：file → files（接口已正确）
+      - 响应解析：修改为处理数组格式
+
+   6. 修复 src/pages/category/create-main-category/create-main-category.vue
+      - 响应解析：修改为处理数组格式
+
+   7. 修复 src/pages/category/create-sub-category/create-sub-category.vue
+      - 响应解析：修改为处理数组格式
+
+   影响范围：
+   - ✅ 分类封面图上传（主分类、子分类）
+   - ✅ 内容图片上传（图片内容）
+   - ✅ 笔记编辑器图片插入
+   - ✅ API 封装层（category.js, content.js）
+
+-----------分界线，上述需求已经处理，请忽略------------------

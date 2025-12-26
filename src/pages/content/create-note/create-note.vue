@@ -1,5 +1,12 @@
 <template>
   <view class="create-note-page">
+    <!-- 自定义导航栏 -->
+    <custom-nav-bar
+      :title="isEdit ? '编辑笔记' : '创建笔记'"
+      :needConfirm="hasModified && !savedSuccessfully && !submitting"
+      confirmText="您有未保存的修改，确定要离开吗？"
+    />
+
     <!-- 表单区域 -->
     <scroll-view class="content-scroll" scroll-y>
       <!-- 标题输入 -->
@@ -142,11 +149,12 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
-import { onLoad, onBackPress } from '@dcloudio/uni-app'
+import { onLoad } from '@dcloudio/uni-app'
 import { contentApi, tagApi } from '@/api'
 import { useCategoryStore } from '@/store/category'
 import config from '@/utils/config'
 import TagSelector from '@/components/tag-selector/tag-selector.vue'
+import CustomNavBar from '@/components/custom-nav-bar/custom-nav-bar.vue'
 
 // 数据
 const contentId = ref('')
@@ -199,34 +207,6 @@ onLoad((options) => {
   if (options.mainCategoryId) {
     formData.mainCategoryId = options.mainCategoryId
   }
-
-  // 设置页面标题
-  uni.setNavigationBarTitle({
-    title: isEdit.value ? '编辑笔记' : '创建笔记'
-  })
-})
-
-// 拦截返回按钮
-onBackPress(() => {
-  // 如果已成功保存或正在提交，允许返回
-  if (savedSuccessfully.value || submitting.value) {
-    return false
-  }
-
-  // 如果有未保存的修改，显示确认对话框
-  if (hasModified.value) {
-    uni.showModal({
-      title: '提示',
-      content: '您有未保存的修改，确定要离开吗？',
-      success: (res) => {
-        if (res.confirm) {
-          uni.navigateBack()
-        }
-      }
-    })
-    return true // 阻止默认返回行为
-  }
-  return false // 允许返回
 })
 
 // 编辑器就绪
@@ -298,13 +278,21 @@ const insertImage = () => {
       uni.uploadFile({
         url: config.API_BASE_URL + '/content/upload-images',
         filePath: tempFilePath,
-        name: 'file',
+        name: 'files',
         success: (uploadRes) => {
           if (uploadRes.statusCode === 200) {
             const data = JSON.parse(uploadRes.data)
-            const imageUrl = data.data?.url || data.url
+            // API 返回 ResultListString 格式：data 是字符串数组
+            let imageUrl = ''
+            if (Array.isArray(data.data) && data.data.length > 0) {
+              imageUrl = data.data[0]
+            } else if (typeof data.data === 'string') {
+              imageUrl = data.data
+            } else if (data.url) {
+              imageUrl = data.url
+            }
 
-            if (editorCtx.value) {
+            if (imageUrl && editorCtx.value) {
               editorCtx.value.insertImage({
                 src: imageUrl,
                 alt: '图片',

@@ -156,7 +156,7 @@ export const http = {
   },
 
   // 文件上传
-  upload(url, filePath, formData = {}, options = {}) {
+  upload(url, filePath, name = 'file', formData = {}, options = {}) {
     return new Promise((resolve, reject) => {
       // 显示加载提示
       if (options.showLoading !== false) {
@@ -169,7 +169,7 @@ export const http = {
       uni.uploadFile({
         url: config.API_BASE_URL + url,
         filePath,
-        name: 'file',
+        name,
         formData,
         success: (res) => {
           if (options.showLoading !== false) {

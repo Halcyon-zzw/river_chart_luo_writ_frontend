@@ -1,5 +1,12 @@
 <template>
   <view class="create-image-page">
+    <!-- 自定义导航栏 -->
+    <custom-nav-bar
+      :title="isEdit ? '编辑图片' : '上传图片'"
+      :needConfirm="hasModified && !savedSuccessfully && !submitting"
+      confirmText="您有未保存的修改，确定要离开吗？"
+    />
+
     <scroll-view class="content-scroll" scroll-y>
       <!-- 图片上传区域 -->
       <view class="upload-section">
@@ -119,11 +126,12 @@
 
 <script setup>
 import { ref, reactive, computed } from 'vue'
-import { onLoad, onBackPress } from '@dcloudio/uni-app'
+import { onLoad } from '@dcloudio/uni-app'
 import { contentApi, tagApi } from '@/api'
 import { useCategoryStore } from '@/store/category'
 import config from '@/utils/config'
 import TagSelector from '@/components/tag-selector/tag-selector.vue'
+import CustomNavBar from '@/components/custom-nav-bar/custom-nav-bar.vue'
 
 // 数据
 const contentId = ref('')
@@ -197,29 +205,6 @@ onLoad((options) => {
     // 保存初始空快照
     saveInitialSnapshot()
   }
-})
-
-// 拦截返回按钮
-onBackPress(() => {
-  // 如果已成功保存或正在提交，允许返回
-  if (savedSuccessfully.value || submitting.value) {
-    return false
-  }
-
-  // 如果有未保存的修改，显示确认对话框
-  if (hasModified.value) {
-    uni.showModal({
-      title: '提示',
-      content: '您有未保存的修改，确定要离开吗？',
-      success: (res) => {
-        if (res.confirm) {
-          uni.navigateBack()
-        }
-      }
-    })
-    return true // 阻止默认返回行为
-  }
-  return false // 允许返回
 })
 
 // 保存初始数据快照
@@ -331,15 +316,24 @@ const uploadImages = async () => {
     const uploadPromises = toUpload.map(img => {
       return new Promise((resolve, reject) => {
         uni.uploadFile({
-          url: config.API_BASE_URL + '/file/upload',
+          url: config.API_BASE_URL + '/content/upload-images',
           filePath: img.url,
-          name: 'file',
+          name: 'files',
           success: (res) => {
             if (res.statusCode === 200) {
               try {
                 const data = JSON.parse(res.data)
-                // 根据后端返回格式解析URL
-                const url = data.data?.url || data.data || data.url || ''
+                // API返回 ResultListString 格式：{ code, data: ["url1", "url2", ...] }
+                // 即使上传单个文件，data也是数组
+                let url = ''
+                if (Array.isArray(data.data) && data.data.length > 0) {
+                  url = data.data[0]
+                } else if (typeof data.data === 'string') {
+                  url = data.data
+                } else if (data.url) {
+                  url = data.url
+                }
+
                 if (url) {
                   resolve(url)
                 } else {
