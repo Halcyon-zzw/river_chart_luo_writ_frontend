@@ -14,7 +14,7 @@
         <view class="swiper-item-content">
           <image
             class="preview-image"
-            :src="img"
+            :src="getFullImageUrl(img)"
             mode="aspectFit"
             @click="previewImage(index)"
           ></image>
@@ -113,6 +113,7 @@ import { ref, computed, onMounted } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { useCollectionStore } from '@/store/collection'
 import { contentApi } from '@/api'
+import { getFullImageUrl } from '@/utils/image'
 
 const collectionStore = useCollectionStore()
 

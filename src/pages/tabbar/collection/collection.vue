@@ -26,7 +26,7 @@
           <view v-if="item.contentType === 'image'" class="image-card">
             <image
               class="content-image"
-              :src="item.imageUrl"
+              :src="getFullImageUrl(item.imageUrl)"
               mode="aspectFill"
             ></image>
             <view class="image-overlay">
@@ -78,6 +78,7 @@ import { onShow } from '@dcloudio/uni-app'
 import { useCollectionStore } from '@/store/collection'
 import { useUserStore } from '@/store/user'
 import { collectionApi, contentApi } from '@/api'
+import { getFullImageUrl } from '@/utils/image'
 
 const collectionStore = useCollectionStore()
 const userStore = useUserStore()

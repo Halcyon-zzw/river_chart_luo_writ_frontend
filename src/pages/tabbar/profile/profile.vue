@@ -12,7 +12,7 @@
           <image
             v-if="userInfo?.avatar"
             class="avatar-img"
-            :src="userInfo.avatar"
+            :src="getFullImageUrl(userInfo.avatar)"
             mode="aspectFill"
           ></image>
           <view v-else class="avatar-placeholder">
@@ -74,6 +74,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useUserStore } from '@/store/user'
+import { getFullImageUrl } from '@/utils/image'
 
 const userStore = useUserStore()
 

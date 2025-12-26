@@ -44,7 +44,7 @@
           </view>
           <view class="cover-upload">
             <view v-if="formData.coverImage" class="cover-preview" @click="previewCover">
-              <image class="cover-image" :src="formData.coverImage" mode="aspectFill"></image>
+              <image class="cover-image" :src="getFullImageUrl(formData.coverImage)" mode="aspectFill"></image>
               <view class="cover-remove" @click.stop="removeCover">
                 <text class="remove-icon">×</text>
               </view>
@@ -100,6 +100,7 @@
 import { ref, computed } from 'vue'
 import { onLoad, onBackPress } from '@dcloudio/uni-app'
 import { categoryApi, tagApi } from '@/api'
+import { getFullImageUrl } from '@/utils/image'
 import TagSelector from '@/components/tag-selector/tag-selector.vue'
 import CustomNavBar from '@/components/custom-nav-bar/custom-nav-bar.vue'
 

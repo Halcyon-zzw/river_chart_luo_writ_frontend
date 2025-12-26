@@ -64,7 +64,7 @@
           >
             <image
               class="waterfall-image"
-              :src="item.imageUrl"
+              :src="getFullImageUrl(item.imageUrl)"
               mode="widthFix"
               @load="imageLoad"
             ></image>
@@ -83,7 +83,7 @@
           >
             <image
               class="waterfall-image"
-              :src="item.imageUrl"
+              :src="getFullImageUrl(item.imageUrl)"
               mode="widthFix"
               @load="imageLoad"
             ></image>
@@ -200,6 +200,7 @@ import { ref, computed, watch } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { contentApi } from '@/api'
 import { useCategoryStore } from '@/store/category'
+import { getFullImageUrl } from '@/utils/image'
 import CustomNavBar from '@/components/custom-nav-bar/custom-nav-bar.vue'
 
 // 数据

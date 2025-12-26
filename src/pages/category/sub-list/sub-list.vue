@@ -75,7 +75,7 @@
             <image
               v-if="subCategory.coverImage"
               class="sub-bg"
-              :src="subCategory.coverImage"
+              :src="getFullImageUrl(subCategory.coverImage)"
               mode="aspectFill"
             ></image>
             <view v-else class="sub-bg-placeholder"></view>
@@ -230,6 +230,7 @@ import { ref, onMounted } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { useCategoryStore } from '@/store/category'
 import { categoryApi, tagApi } from '@/api'
+import { getFullImageUrl } from '@/utils/image'
 import TagSelector from '@/components/tag-selector/tag-selector.vue'
 
 const categoryStore = useCategoryStore()

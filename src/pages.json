@@ -52,7 +52,8 @@
 		{
 			"path": "pages/content/note-detail/note-detail",
 			"style": {
-				"navigationBarTitleText": "笔记详情"
+				"navigationBarTitleText": "笔记详情",
+				"navigationStyle": "custom"
 			}
 		},
 		{

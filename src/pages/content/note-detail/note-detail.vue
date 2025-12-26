@@ -1,5 +1,8 @@
 <template>
   <view class="note-detail-page">
+    <!-- 自定义导航栏 -->
+    <custom-nav-bar title="笔记详情" />
+
     <scroll-view class="note-scroll" scroll-y>
       <!-- 标题 -->
       <view class="note-header">
@@ -67,6 +70,7 @@ import { ref, computed } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { useCollectionStore } from '@/store/collection'
 import { contentApi } from '@/api'
+import CustomNavBar from '@/components/custom-nav-bar/custom-nav-bar.vue'
 
 const collectionStore = useCollectionStore()
 
@@ -182,13 +186,15 @@ const formatTime = (time) => {
 .note-detail-page {
   min-height: 100vh;
   background: #f5f5f5;
-  padding-bottom: calc(120rpx + constant(safe-area-inset-bottom));
-  padding-bottom: calc(120rpx + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
 }
 
 /* 滚动容器 */
 .note-scroll {
-  height: 100vh;
+  flex: 1;
+  padding-bottom: calc(120rpx + constant(safe-area-inset-bottom));
+  padding-bottom: calc(120rpx + env(safe-area-inset-bottom));
 }
 
 /* 笔记头部 */

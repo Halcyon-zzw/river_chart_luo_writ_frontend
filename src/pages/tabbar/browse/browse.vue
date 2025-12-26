@@ -75,7 +75,7 @@
             <image
               v-if="category.coverImage"
               class="category-bg"
-              :src="category.coverImage"
+              :src="getFullImageUrl(category.coverImage)"
               mode="aspectFill"
             ></image>
             <view v-else class="category-bg-placeholder"></view>
@@ -231,6 +231,7 @@ import { ref, onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { useCategoryStore } from '@/store/category'
 import { categoryApi, tagApi } from '@/api'
+import { getFullImageUrl } from '@/utils/image'
 import TagSelector from '@/components/tag-selector/tag-selector.vue'
 
 const categoryStore = useCategoryStore()
@@ -756,9 +757,9 @@ onShow(() => {
 }
 
 .category-label {
-  font-size: 28rpx;
-  color: #666666;
-  font-weight: 500;
+  font-size: 32rpx;
+  color: #333333;
+  font-weight: 600;
 }
 
 /* 搜索容器 */

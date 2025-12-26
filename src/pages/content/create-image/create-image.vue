@@ -18,7 +18,7 @@
             class="image-item"
             @click="previewImage(index)"
           >
-            <image class="upload-image" :src="img.url" mode="aspectFill"></image>
+            <image class="upload-image" :src="getFullImageUrl(img.url)" mode="aspectFill"></image>
             <!-- 删除按钮 -->
             <view class="delete-btn" @click.stop="removeImage(index)">
               <text class="delete-icon">✕</text>
@@ -125,6 +125,7 @@ import { onLoad } from '@dcloudio/uni-app'
 import { contentApi, tagApi } from '@/api'
 import { useCategoryStore } from '@/store/category'
 import config from '@/utils/config'
+import { getFullImageUrl } from '@/utils/image'
 import TagSelector from '@/components/tag-selector/tag-selector.vue'
 import CustomNavBar from '@/components/custom-nav-bar/custom-nav-bar.vue'
 
