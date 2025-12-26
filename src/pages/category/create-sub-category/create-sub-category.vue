@@ -269,6 +269,16 @@ const loadSubCategoryDetail = async () => {
     // 设置主分类名称
     if (detail.mainCategoryName) {
       mainCategoryName.value = detail.mainCategoryName
+    } else if (detail.mainCategoryId) {
+      // 如果没有主分类名称，通过 ID 查询
+      try {
+        const mainCategoryRes = await categoryApi.getMainCategoryById(detail.mainCategoryId)
+        const mainCategory = mainCategoryRes.data || mainCategoryRes
+        mainCategoryName.value = mainCategory.name || ''
+      } catch (error) {
+        console.error('Load main category name error:', error)
+        // 查询失败不影响整体流程
+      }
     }
 
     // 处理标签
@@ -394,6 +404,14 @@ const handleSubmit = async () => {
         title: '保存成功',
         icon: 'success'
       })
+
+      // 标记为成功保存，允许正常返回
+      savedSuccessfully.value = true
+
+      // 编辑模式：延迟返回
+      setTimeout(() => {
+        uni.navigateBack()
+      }, 1500)
     } else {
       // 创建子分类
       await categoryApi.createSubCategory(data)
@@ -402,15 +420,17 @@ const handleSubmit = async () => {
         title: '创建成功',
         icon: 'success'
       })
+
+      // 标记为成功保存
+      savedSuccessfully.value = true
+
+      // 创建模式：跳转到所选主分类的子分类列表页
+      setTimeout(() => {
+        uni.redirectTo({
+          url: `/pages/category/sub-list/sub-list?mainCategoryId=${formData.value.mainCategoryId}&mainCategoryName=${encodeURIComponent(mainCategoryName.value)}`
+        })
+      }, 1500)
     }
-
-    // 标记为成功保存，允许正常返回
-    savedSuccessfully.value = true
-
-    // 延迟返回
-    setTimeout(() => {
-      uni.navigateBack()
-    }, 1500)
   } catch (error) {
     console.error('Submit sub category error:', error)
     uni.showToast({
