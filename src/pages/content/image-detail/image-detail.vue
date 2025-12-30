@@ -1,107 +1,139 @@
 <template>
   <view class="image-detail-page">
-    <!-- 图片预览区域 -->
-    <swiper
-      class="image-swiper"
-      :indicator-dots="images.length > 1"
-      :autoplay="false"
-      :circular="true"
-      indicator-color="rgba(255, 255, 255, 0.3)"
-      indicator-active-color="#00c4b3"
-      @change="onSwiperChange"
-    >
-      <swiper-item v-for="(img, index) in images" :key="index">
-        <view class="swiper-item-content">
-          <image
-            class="preview-image"
-            :src="getFullImageUrl(img)"
-            mode="aspectFit"
-            @click="previewImage(index)"
-          ></image>
-        </view>
-      </swiper-item>
-    </swiper>
+    <!-- 自定义导航栏 -->
+    <custom-nav-bar title="图片详情" />
 
-    <!-- 顶部操作栏 -->
-    <view class="top-bar">
-      <view class="top-left">
-        <view class="back-btn" @click="goBack">
-          <text class="icon-back">‹</text>
-        </view>
-      </view>
-      <view class="top-right">
-        <view class="action-btn" @click="toggleCollect">
-          <text class="icon-heart">{{ isCollected ? '❤️' : '🤍' }}</text>
-        </view>
-        <view class="action-btn" @click="showMoreActions">
-          <text class="icon-more">⋯</text>
-        </view>
-      </view>
-    </view>
-
-    <!-- 底部信息栏 -->
-    <view class="bottom-info" :class="{ expanded: infoExpanded }">
-      <view class="info-header" @click="toggleInfo">
-        <view class="info-indicator"></view>
-      </view>
-
-      <view class="info-content">
+    <scroll-view class="detail-scroll" scroll-y>
+      <!-- 内容信息区 -->
+      <view class="content-info">
         <!-- 标题 -->
         <text class="content-title">{{ contentDetail.title || '未命名' }}</text>
 
-        <!-- 描述 -->
-        <text v-if="contentDetail.description" class="content-desc">
-          {{ contentDetail.description }}
-        </text>
-
         <!-- 标签 -->
-        <view v-if="contentDetail.tagDTOList && contentDetail.tagDTOList.length > 0" class="content-tags">
-          <text
-            v-for="tag in contentDetail.tagDTOList"
+        <view class="tags-container">
+          <view
+            v-for="tag in contentDetail.tagDTOList || []"
             :key="tag.id"
-            class="tag-item"
+            class="tag-wrapper"
+            @longpress="enterTagDeleteMode(tag)"
+            @click.stop="handleTagClick"
           >
-            {{ tag.name }}
-          </text>
-        </view>
-
-        <!-- 元信息 -->
-        <view class="content-meta">
-          <text class="meta-item">
-            <text class="meta-label">创建时间：</text>
-            <text class="meta-value">{{ formatTime(contentDetail.createTime) }}</text>
-          </text>
-          <text v-if="contentDetail.category" class="meta-item">
-            <text class="meta-label">分类：</text>
-            <text class="meta-value">{{ contentDetail.category }}</text>
-          </text>
-        </view>
-
-        <!-- 编辑按钮 -->
-        <view class="action-buttons">
-          <view class="action-button secondary" @click="editContent">
-            <text>编辑</text>
+            <text class="tag-item">{{ tag.name }}</text>
+            <text
+              v-if="tagDeleteMode"
+              class="tag-remove-icon"
+              @click.stop="removeTagAssociation(tag)"
+            >✕</text>
           </view>
-          <view class="action-button danger" @click="deleteContent">
-            <text>删除</text>
+
+          <!-- 添加标签按钮 -->
+          <view class="add-tag-btn" @click="openTagSelector">
+            <text>+</text>
           </view>
         </view>
+
+        <!-- 创建时间 -->
+        <text class="create-time">{{ formatTime(contentDetail.createTime) }}</text>
+      </view>
+
+      <!-- 图片展示区 -->
+      <view class="image-container" v-if="firstImage" @click="previewImage">
+        <image
+          class="detail-image"
+          :src="getFullImageUrl(firstImage)"
+          mode="aspectFit"
+        ></image>
+      </view>
+
+      <!-- 底部占位 -->
+      <view class="bottom-placeholder"></view>
+    </scroll-view>
+
+    <!-- 底部操作栏 -->
+    <view class="bottom-toolbar">
+      <view class="toolbar-item" @click="shareContent">
+        <text class="toolbar-icon">📤</text>
+        <text class="toolbar-text">分享</text>
+      </view>
+
+      <view class="toolbar-item" @click="toggleCollect">
+        <text class="toolbar-icon">{{ isCollected ? '❤️' : '🤍' }}</text>
+        <text class="toolbar-text">{{ isCollected ? '已收藏' : '收藏' }}</text>
+      </view>
+
+      <view class="toolbar-item" @click="editContent">
+        <text class="toolbar-icon">✏️</text>
+        <text class="toolbar-text">编辑</text>
+      </view>
+
+      <view class="toolbar-item" @click="deleteContent">
+        <text class="toolbar-icon">🗑️</text>
+        <text class="toolbar-text">删除</text>
+      </view>
+
+      <view class="toolbar-item" @click="showMoreMenu">
+        <text class="toolbar-icon">⋯</text>
+        <text class="toolbar-text">更多</text>
       </view>
     </view>
 
-    <!-- 更多操作弹窗 -->
-    <view v-if="showActions" class="actions-mask" @click="hideMoreActions">
+    <!-- 标签选择器 -->
+    <tag-selector
+      :visible="showTagSelector"
+      :selectedTagIds="selectedTagIds"
+      @update:visible="showTagSelector = $event"
+      @confirm="handleTagConfirm"
+      @cancel="handleTagCancel"
+    />
+
+    <!-- 更多操作菜单 -->
+    <view v-if="showMoreActions" class="actions-mask" @click="hideMoreMenu">
       <view class="actions-container" @click.stop>
+        <view class="action-item" @click="showDetailInfo">
+          <text class="action-icon">ℹ️</text>
+          <text class="action-text">详情</text>
+        </view>
         <view class="action-item" @click="downloadImage">
           <text class="action-icon">📥</text>
           <text class="action-text">保存到相册</text>
         </view>
-        <view class="action-item" @click="shareContent">
-          <text class="action-icon">📤</text>
-          <text class="action-text">分享</text>
-        </view>
-        <view class="action-cancel" @click="hideMoreActions">
+        <view class="action-cancel" @click="hideMoreMenu">
           <text>取消</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 详情信息弹窗 -->
+    <view v-if="showDetailModal" class="detail-mask" @click="hideDetailInfo">
+      <view class="detail-container" @click.stop>
+        <view class="detail-header">
+          <text class="detail-title">详情信息</text>
+          <text class="detail-close" @click="hideDetailInfo">✕</text>
+        </view>
+        <view class="detail-content">
+          <!-- 描述 -->
+          <view v-if="contentDetail.description" class="detail-item">
+            <text class="detail-label">描述</text>
+            <text class="detail-value">{{ contentDetail.description }}</text>
+          </view>
+
+          <!-- 分类 -->
+          <view v-if="contentDetail.category" class="detail-item">
+            <text class="detail-label">分类</text>
+            <text class="detail-value">{{ contentDetail.category }}</text>
+          </view>
+
+          <!-- 创建时间 -->
+          <view class="detail-item">
+            <text class="detail-label">创建时间</text>
+            <text class="detail-value">{{ formatTime(contentDetail.createTime) }}</text>
+          </view>
+
+          <!-- 修改时间 -->
+          <view v-if="contentDetail.updateTime" class="detail-item">
+            <text class="detail-label">修改时间</text>
+            <text class="detail-value">{{ formatTime(contentDetail.updateTime) }}</text>
+          </view>
         </view>
       </view>
     </view>
@@ -109,22 +141,28 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { useCollectionStore } from '@/store/collection'
-import { contentApi } from '@/api'
+import { contentApi, tagApi } from '@/api'
 import { getFullImageUrl } from '@/utils/image'
+import CustomNavBar from '@/components/custom-nav-bar/custom-nav-bar.vue'
+import TagSelector from '@/components/tag-selector/tag-selector.vue'
 
 const collectionStore = useCollectionStore()
 
 // 数据
 const contentId = ref('')
 const contentDetail = ref({})
-const images = ref([])
-const currentImageIndex = ref(0)
-const infoExpanded = ref(false)
-const showActions = ref(false)
+const firstImage = ref('')
+const tagDeleteMode = ref(false)
+const showMoreActions = ref(false)
+const showDetailModal = ref(false)
 let isFirstLoad = true
+
+// 标签选择器
+const showTagSelector = ref(false)
+const selectedTagIds = ref([])
 
 // 计算属性
 const isCollected = computed(() => {
@@ -152,15 +190,15 @@ const loadContentDetail = async () => {
     const res = await contentApi.getContentById(contentId.value)
     contentDetail.value = res.data || res
 
-    // 处理图片URL
+    // 处理图片URL - 只取第一张
     if (contentDetail.value.imageUrl) {
-      // 如果是多张图片，后端可能返回逗号分隔的字符串或数组
       if (typeof contentDetail.value.imageUrl === 'string') {
-        images.value = contentDetail.value.imageUrl.split(',').filter(url => url.trim())
+        const urls = contentDetail.value.imageUrl.split(',').filter(url => url.trim())
+        firstImage.value = urls[0] || ''
       } else if (Array.isArray(contentDetail.value.imageUrl)) {
-        images.value = contentDetail.value.imageUrl
+        firstImage.value = contentDetail.value.imageUrl[0] || ''
       } else {
-        images.value = [contentDetail.value.imageUrl]
+        firstImage.value = contentDetail.value.imageUrl
       }
     }
   } catch (error) {
@@ -172,22 +210,13 @@ const loadContentDetail = async () => {
   }
 }
 
-// Swiper切换
-const onSwiperChange = (e) => {
-  currentImageIndex.value = e.detail.current
-}
-
 // 预览图片
-const previewImage = (index) => {
+const previewImage = () => {
+  if (!firstImage.value) return
   uni.previewImage({
-    urls: images.value,
-    current: index
+    urls: [getFullImageUrl(firstImage.value)],
+    current: 0
   })
-}
-
-// 返回
-const goBack = () => {
-  uni.navigateBack()
 }
 
 // 切换收藏
@@ -195,63 +224,86 @@ const toggleCollect = async () => {
   await collectionStore.toggleCollection(contentId.value)
 }
 
-// 展开/收起信息
-const toggleInfo = () => {
-  infoExpanded.value = !infoExpanded.value
+// 进入标签删除模式
+const enterTagDeleteMode = (tag) => {
+  tagDeleteMode.value = true
 }
 
-// 显示更多操作
-const showMoreActions = () => {
-  showActions.value = true
+// 处理标签点击（防止误触发）
+const handleTagClick = () => {
+  // 点击标签退出删除模式
+  if (tagDeleteMode.value) {
+    tagDeleteMode.value = false
+  }
 }
 
-// 隐藏更多操作
-const hideMoreActions = () => {
-  showActions.value = false
-}
-
-// 下载图片
-const downloadImage = () => {
-  hideMoreActions()
-
-  const currentImage = images.value[currentImageIndex.value]
-  if (!currentImage) return
-
-  uni.downloadFile({
-    url: currentImage,
-    success: (res) => {
-      if (res.statusCode === 200) {
-        uni.saveImageToPhotosAlbum({
-          filePath: res.tempFilePath,
-          success: () => {
-            uni.showToast({
-              title: '已保存到相册',
-              icon: 'success'
-            })
-          },
-          fail: () => {
-            uni.showToast({
-              title: '保存失败',
-              icon: 'none'
-            })
-          }
-        })
-      }
-    },
-    fail: () => {
-      uni.showToast({
-        title: '下载失败',
-        icon: 'none'
-      })
+// 删除标签关联
+const removeTagAssociation = async (tag) => {
+  try {
+    // 更新本地数据
+    const index = contentDetail.value.tagDTOList.findIndex(t => t.id === tag.id)
+    if (index > -1) {
+      contentDetail.value.tagDTOList.splice(index, 1)
     }
-  })
+
+    // 退出删除模式
+    tagDeleteMode.value = false
+
+    uni.showToast({
+      title: '标签已移除',
+      icon: 'success'
+    })
+  } catch (error) {
+    console.error('Remove tag error:', error)
+    uni.showToast({
+      title: '移除失败',
+      icon: 'none'
+    })
+  }
+}
+
+// 打开标签选择器
+const openTagSelector = () => {
+  selectedTagIds.value = (contentDetail.value.tagDTOList || []).map(tag => tag.id)
+  showTagSelector.value = true
+}
+
+// 标签确认
+const handleTagConfirm = async (tags) => {
+  try {
+    const tagIds = tags.map(tag => tag.id)
+
+    // 调用批量关联接口
+    await tagApi.batchLinkContent({
+      contentId: contentId.value,
+      tagIds: tagIds
+    })
+
+    // 更新本地数据
+    contentDetail.value.tagDTOList = tags
+
+    uni.showToast({
+      title: '标签更新成功',
+      icon: 'success'
+    })
+  } catch (error) {
+    console.error('Update tags error:', error)
+    uni.showToast({
+      title: '标签更新失败',
+      icon: 'none'
+    })
+  }
+}
+
+// 标签取消
+const handleTagCancel = () => {
+  // 不做任何操作
 }
 
 // 分享内容
 const shareContent = () => {
-  hideMoreActions()
   uni.showToast({
-    title: '分享功能开发中',
+    title: '功能暂未开发',
     icon: 'none'
   })
 }
@@ -290,6 +342,65 @@ const deleteContent = () => {
   })
 }
 
+// 显示更多菜单
+const showMoreMenu = () => {
+  showMoreActions.value = true
+}
+
+// 隐藏更多菜单
+const hideMoreMenu = () => {
+  showMoreActions.value = false
+}
+
+// 显示详情信息
+const showDetailInfo = () => {
+  hideMoreMenu()
+  showDetailModal.value = true
+}
+
+// 隐藏详情信息
+const hideDetailInfo = () => {
+  showDetailModal.value = false
+}
+
+// 下载图片
+const downloadImage = () => {
+  hideMoreMenu()
+
+  if (!firstImage.value) return
+
+  const imageUrl = getFullImageUrl(firstImage.value)
+
+  uni.downloadFile({
+    url: imageUrl,
+    success: (res) => {
+      if (res.statusCode === 200) {
+        uni.saveImageToPhotosAlbum({
+          filePath: res.tempFilePath,
+          success: () => {
+            uni.showToast({
+              title: '已保存到相册',
+              icon: 'success'
+            })
+          },
+          fail: () => {
+            uni.showToast({
+              title: '保存失败',
+              icon: 'none'
+            })
+          }
+        })
+      }
+    },
+    fail: () => {
+      uni.showToast({
+        title: '下载失败',
+        icon: 'none'
+      })
+    }
+  })
+}
+
 // 格式化时间
 const formatTime = (time) => {
   if (!time) return ''
@@ -300,120 +411,23 @@ const formatTime = (time) => {
 
 <style scoped>
 .image-detail-page {
-  width: 100vw;
-  height: 100vh;
-  background: #000000;
-  position: relative;
-}
-
-/* 图片轮播 */
-.image-swiper {
-  width: 100%;
-  height: 100%;
-}
-
-.swiper-item-content {
-  width: 100%;
-  height: 100%;
+  min-height: 100vh;
+  background: #ffffff;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
 }
 
-.preview-image {
-  width: 100%;
-  height: 100%;
+/* 滚动容器 */
+.detail-scroll {
+  flex: 1;
+  padding-bottom: calc(120rpx + constant(safe-area-inset-bottom));
+  padding-bottom: calc(120rpx + env(safe-area-inset-bottom));
 }
 
-/* 顶部操作栏 */
-.top-bar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 88rpx;
-  padding-top: constant(safe-area-inset-top);
-  padding-top: env(safe-area-inset-top);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-left: 20rpx;
-  padding-right: 20rpx;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.6) 0%, transparent 100%);
-  z-index: 100;
-}
-
-.top-left,
-.top-right {
-  display: flex;
-  align-items: center;
-  gap: 20rpx;
-}
-
-.back-btn,
-.action-btn {
-  width: 72rpx;
-  height: 72rpx;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(10rpx);
-  border-radius: 36rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.icon-back {
-  font-size: 56rpx;
-  color: #ffffff;
-  line-height: 1;
-  font-weight: 300;
-}
-
-.icon-heart,
-.icon-more {
-  font-size: 36rpx;
-}
-
-/* 底部信息栏 */
-.bottom-info {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  max-height: 60%;
-  background: rgba(255, 255, 255, 0.98);
-  backdrop-filter: blur(20rpx);
-  border-radius: 32rpx 32rpx 0 0;
-  transition: transform 0.3s ease;
-  transform: translateY(calc(100% - 120rpx));
-  z-index: 99;
-}
-
-.bottom-info.expanded {
-  transform: translateY(0);
-}
-
-.info-header {
-  height: 80rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-
-.info-indicator {
-  width: 80rpx;
-  height: 8rpx;
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 4rpx;
-}
-
-.info-content {
-  padding: 0 40rpx 60rpx;
-  padding-bottom: calc(60rpx + constant(safe-area-inset-bottom));
-  padding-bottom: calc(60rpx + env(safe-area-inset-bottom));
-  overflow-y: auto;
-  max-height: calc(60vh - 80rpx);
+/* 内容信息区 */
+.content-info {
+  padding: 30rpx 40rpx;
+  background: #ffffff;
 }
 
 .content-title {
@@ -421,26 +435,27 @@ const formatTime = (time) => {
   font-size: 40rpx;
   font-weight: 700;
   color: #333333;
-  margin-bottom: 20rpx;
-}
-
-.content-desc {
-  display: block;
-  font-size: 28rpx;
-  color: #666666;
-  line-height: 1.6;
+  line-height: 1.4;
   margin-bottom: 24rpx;
 }
 
-.content-tags {
+/* 标签容器 */
+.tags-container {
   display: flex;
   flex-wrap: wrap;
   gap: 16rpx;
-  margin-bottom: 32rpx;
+  margin-bottom: 20rpx;
+  align-items: center;
+}
+
+.tag-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
 }
 
 .tag-item {
-  padding: 12rpx 24rpx;
+  padding: 10rpx 20rpx;
   background: rgba(0, 196, 179, 0.15);
   border: 1rpx solid rgba(0, 196, 179, 0.3);
   border-radius: 8rpx;
@@ -448,66 +463,105 @@ const formatTime = (time) => {
   color: #00c4b3;
 }
 
-.content-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 16rpx;
-  margin-bottom: 32rpx;
-  padding: 24rpx;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 16rpx;
-}
-
-.meta-item {
-  font-size: 26rpx;
-  color: #666666;
-}
-
-.meta-label {
-  color: #999999;
-}
-
-.meta-value {
-  color: #333333;
-}
-
-/* 操作按钮 */
-.action-buttons {
-  display: flex;
-  gap: 20rpx;
-}
-
-.action-button {
-  flex: 1;
-  height: 88rpx;
-  border-radius: 16rpx;
+.tag-remove-icon {
+  position: absolute;
+  top: -8rpx;
+  right: -8rpx;
+  width: 32rpx;
+  height: 32rpx;
+  background: #ff4444;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 30rpx;
-  font-weight: 500;
+  font-size: 20rpx;
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 2rpx 8rpx rgba(255, 68, 68, 0.4);
+}
+
+.add-tag-btn {
+  padding: 10rpx 20rpx;
+  background: rgba(0, 0, 0, 0.03);
+  border: 1rpx dashed rgba(0, 0, 0, 0.1);
+  border-radius: 8rpx;
+  font-size: 24rpx;
+  color: #999999;
+  min-width: 60rpx;
+  text-align: center;
+}
+
+.add-tag-btn:active {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* 创建时间 */
+.create-time {
+  display: block;
+  font-size: 22rpx;
+  color: #999999;
+}
+
+/* 图片展示区 */
+.image-container {
+  width: 100%;
+  padding: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.detail-image {
+  width: 100%;
+  max-height: 800rpx;
+}
+
+/* 底部占位 */
+.bottom-placeholder {
+  height: 160rpx;
+}
+
+/* 底部操作栏 */
+.bottom-toolbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 120rpx;
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20rpx);
+  border-top: 1rpx solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  z-index: 100;
+}
+
+.toolbar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6rpx;
+  padding: 12rpx 16rpx;
   transition: all 0.2s ease;
 }
 
-.action-button.secondary {
-  background: rgba(0, 0, 0, 0.08);
-  color: #333333;
+.toolbar-item:active {
+  opacity: 0.6;
 }
 
-.action-button.secondary:active {
-  background: rgba(0, 0, 0, 0.12);
+.toolbar-icon {
+  font-size: 36rpx;
 }
 
-.action-button.danger {
-  background: rgba(255, 59, 48, 0.15);
-  color: #ff3b30;
+.toolbar-text {
+  font-size: 20rpx;
+  color: #666666;
 }
 
-.action-button.danger:active {
-  background: rgba(255, 59, 48, 0.25);
-}
-
-/* 更多操作弹窗 */
+/* 更多操作菜单 */
 .actions-mask {
   position: fixed;
   top: 0;
@@ -575,5 +629,88 @@ const formatTime = (time) => {
 
 .action-cancel:active {
   background: rgba(0, 0, 0, 0.08);
+}
+
+/* 详情信息弹窗 */
+.detail-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60rpx;
+}
+
+.detail-container {
+  width: 100%;
+  max-width: 600rpx;
+  background: #ffffff;
+  border-radius: 24rpx;
+  overflow: hidden;
+  animation: scaleIn 0.3s ease;
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 32rpx 40rpx;
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.08);
+}
+
+.detail-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333333;
+}
+
+.detail-close {
+  font-size: 48rpx;
+  color: #999999;
+  line-height: 1;
+}
+
+.detail-content {
+  padding: 40rpx;
+  max-height: 600rpx;
+  overflow-y: auto;
+}
+
+.detail-item {
+  margin-bottom: 32rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.detail-item:last-child {
+  margin-bottom: 0;
+}
+
+.detail-label {
+  font-size: 24rpx;
+  color: #999999;
+}
+
+.detail-value {
+  font-size: 28rpx;
+  color: #333333;
+  line-height: 1.6;
 }
 </style>

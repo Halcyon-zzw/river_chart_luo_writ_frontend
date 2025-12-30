@@ -229,7 +229,7 @@
 import { ref, onMounted } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { useCategoryStore } from '@/store/category'
-import { categoryApi, tagApi } from '@/api'
+import { categoryApi, tagApi, contentApi } from '@/api'
 import { getFullImageUrl } from '@/utils/image'
 import TagSelector from '@/components/tag-selector/tag-selector.vue'
 
@@ -351,10 +351,63 @@ const onLoadMore = () => {
 }
 
 // 进入内容列表
-const goToContentList = (subCategory) => {
+const goToContentList = async (subCategory) => {
   categoryStore.setCurrentSubCategory(subCategory)
+
+  // 按顺序查询：图片 → 文本
+  const contentTypes = ['image', 'note']
+  let targetType = 'image' // 默认跳转到图片类型
+  const typeResults = {} // 记录每个类型的查询结果
+
+  // 依次查询每种类型是否有数据
+  for (const type of contentTypes) {
+    try {
+      console.log(`[Sub-list] 🔍 Checking content type: ${type} for subCategory: ${subCategory.id}`)
+
+      const res = await contentApi.getContentList({
+        subCategoryId: subCategory.id,
+        contentType: type,
+        pageNum: 1,
+        pageSize: 1
+      })
+
+      console.log(`[Sub-list] 📦 API Response for ${type}:`, JSON.stringify(res))
+
+      // 检查响应格式 - 支持多种可能的响应结构
+      let list = []
+      if (res.data?.rows) {
+        list = res.data.rows
+      } else if (res.rows) {
+        list = res.rows
+      } else if (Array.isArray(res.data)) {
+        list = res.data
+      } else if (Array.isArray(res)) {
+        list = res
+      }
+
+      typeResults[type] = list.length
+      console.log(`[Sub-list] 📊 Type "${type}" has ${list.length} items`)
+
+      // 如果该类型有数据，使用该类型
+      if (list.length > 0) {
+        targetType = type
+        console.log(`[Sub-list] ✅ Selected type: "${targetType}"`)
+        break
+      }
+    } catch (error) {
+      // 单个查询失败不影响继续查询其他类型
+      console.error(`[Sub-list] ❌ Query ${type} error:`, error)
+      typeResults[type] = 'error'
+      // 继续查询下一个类型
+      continue
+    }
+  }
+
+  console.log(`[Sub-list] 📈 Query results:`, typeResults)
+  console.log(`[Sub-list] 🎯 Final target type: "${targetType}", navigating...`)
+
   uni.navigateTo({
-    url: `/pages/category/content-list/content-list?subCategoryId=${subCategory.id}`
+    url: `/pages/category/content-list/content-list?subCategoryId=${subCategory.id}&contentType=${targetType}`
   })
 }
 

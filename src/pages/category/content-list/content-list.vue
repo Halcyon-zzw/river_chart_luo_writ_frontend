@@ -59,17 +59,33 @@
           <view
             v-for="item in leftColumn"
             :key="item.id"
-            class="waterfall-item"
-            @click="goToDetail(item)"
+            class="waterfall-item-wrapper"
           >
-            <image
-              class="waterfall-image"
-              :src="getFullImageUrl(item.imageUrl)"
-              mode="widthFix"
-              @load="imageLoad"
-            ></image>
-            <view class="waterfall-info">
-              <text class="waterfall-title">{{ item.name }}</text>
+            <!-- 选择框 -->
+            <view v-if="selectionMode" class="checkbox-container" @click.stop="toggleSelection(item)">
+              <view
+                class="checkbox"
+                :class="{ checked: selectedIds.includes(item.id) }"
+              >
+                <text v-if="selectedIds.includes(item.id)" class="checkbox-icon">✓</text>
+              </view>
+            </view>
+
+            <view
+              class="waterfall-item"
+              @touchstart="onImageTouchStart($event, item)"
+              @touchend="onImageTouchEnd($event, item)"
+              @click="selectionMode ? toggleSelection(item) : goToDetail(item)"
+            >
+              <image
+                class="waterfall-image"
+                :src="getFullImageUrl(item.imageUrl)"
+                mode="widthFix"
+                @load="imageLoad"
+              ></image>
+              <view class="waterfall-info">
+                <text class="waterfall-title">{{ item.name }}</text>
+              </view>
             </view>
           </view>
         </view>
@@ -78,17 +94,33 @@
           <view
             v-for="item in rightColumn"
             :key="item.id"
-            class="waterfall-item"
-            @click="goToDetail(item)"
+            class="waterfall-item-wrapper"
           >
-            <image
-              class="waterfall-image"
-              :src="getFullImageUrl(item.imageUrl)"
-              mode="widthFix"
-              @load="imageLoad"
-            ></image>
-            <view class="waterfall-info">
-              <text class="waterfall-title">{{ item.name }}</text>
+            <!-- 选择框 -->
+            <view v-if="selectionMode" class="checkbox-container" @click.stop="toggleSelection(item)">
+              <view
+                class="checkbox"
+                :class="{ checked: selectedIds.includes(item.id) }"
+              >
+                <text v-if="selectedIds.includes(item.id)" class="checkbox-icon">✓</text>
+              </view>
+            </view>
+
+            <view
+              class="waterfall-item"
+              @touchstart="onImageTouchStart($event, item)"
+              @touchend="onImageTouchEnd($event, item)"
+              @click="selectionMode ? toggleSelection(item) : goToDetail(item)"
+            >
+              <image
+                class="waterfall-image"
+                :src="getFullImageUrl(item.imageUrl)"
+                mode="widthFix"
+                @load="imageLoad"
+              ></image>
+              <view class="waterfall-info">
+                <text class="waterfall-title">{{ item.name }}</text>
+              </view>
             </view>
           </view>
         </view>
@@ -273,7 +305,17 @@ const getDisplayTags = (content) => {
 
 // 页面加载
 onLoad((options) => {
+  console.log('[Content-list] 📥 onLoad received options:', options)
+
   subCategoryId.value = options.subCategoryId
+
+  // 接收 contentType 参数
+  if (options.contentType) {
+    console.log(`[Content-list] 🎯 Setting currentTab to: "${options.contentType}"`)
+    currentTab.value = options.contentType
+  } else {
+    console.log('[Content-list] ⚠️ No contentType parameter, using default:', currentTab.value)
+  }
 
   // 从store获取分类名称
   const categoryStore = useCategoryStore()
@@ -283,6 +325,8 @@ onLoad((options) => {
   if (categoryStore.currentSubCategory) {
     subCategoryName.value = categoryStore.currentSubCategory.name || ''
   }
+
+  console.log(`[Content-list] ✅ onLoad complete. currentTab: "${currentTab.value}", subCategoryId: ${subCategoryId.value}`)
 })
 
 // 页面显示时刷新
@@ -291,12 +335,6 @@ onShow(async () => {
   if (isFirstLoad) {
     isFirstLoad = false
     await loadContents(true)
-
-    // 如果图片列表为空，检查是否有文本内容
-    if (currentTab.value === 'image' && contents.value.length === 0) {
-      currentTab.value = 'note'
-      await loadContents(true)
-    }
     return
   }
 
@@ -305,7 +343,8 @@ onShow(async () => {
 })
 
 // 监听Tab切换
-watch(currentTab, () => {
+watch(currentTab, (newVal, oldVal) => {
+  console.log(`[Content-list] 🔄 Tab changed from "${oldVal}" to "${newVal}"`)
   loadContents(true)
 })
 
@@ -488,6 +527,21 @@ const onTouchStart = (e, item) => {
 
   touchStartX = e.touches[0].clientX
   touchStartTime = Date.now()
+}
+
+// 图片长按相关变量
+let imageTouchStartTime = 0
+const onImageTouchStart = (e, item) => {
+  imageTouchStartTime = Date.now()
+}
+
+const onImageTouchEnd = (e, item) => {
+  const touchTime = Date.now() - imageTouchStartTime
+
+  // 长按检测（超过500ms）
+  if (touchTime > 500) {
+    enterSelectionMode()
+  }
 }
 
 // 触摸移动
@@ -809,8 +863,12 @@ const batchDelete = async () => {
   flex-direction: column;
 }
 
-.waterfall-item {
+.waterfall-item-wrapper {
+  position: relative;
   margin-bottom: 20rpx;
+}
+
+.waterfall-item {
   border-radius: 16rpx;
   overflow: hidden;
   background: #ffffff;
