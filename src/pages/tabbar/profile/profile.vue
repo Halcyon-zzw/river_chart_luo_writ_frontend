@@ -62,7 +62,7 @@
 
       <!-- 版本信息 -->
       <view class="version-info">
-        <text class="version-text">河图洛书 v1.0.0</text>
+        <text class="version-text">河图洛书 v{{ appVersion }}</text>
       </view>
 
       <!-- 底部占位 -->
@@ -75,10 +75,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { useUserStore } from '@/store/user'
 import { getFullImageUrl } from '@/utils/image'
+import config from '@/utils/config'
 
 const userStore = useUserStore()
 
 // 数据
+const appVersion = config.VERSION
 const cacheSize = ref('0 MB')
 
 // 计算属性
@@ -120,7 +122,7 @@ const clearCache = () => {
 const showAbout = () => {
   uni.showModal({
     title: '关于我们',
-    content: '河图洛书 - 沉浸式内容管理工具\n\n版本：v1.0.0\n开发团队：河图洛书团队',
+    content: `河图洛书 - 沉浸式内容管理工具\n\n版本：v${appVersion}\n开发团队：河图洛书团队`,
     showCancel: false
   })
 }

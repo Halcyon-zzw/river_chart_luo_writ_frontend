@@ -69,10 +69,12 @@
 import { ref, computed } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { useCollectionStore } from '@/store/collection'
-import { contentApi } from '@/api'
+import { useUserStore } from '@/store/user'
+import { contentApi, browseHistoryApi } from '@/api'
 import CustomNavBar from '@/components/custom-nav-bar/custom-nav-bar.vue'
 
 const collectionStore = useCollectionStore()
+const userStore = useUserStore()
 
 // 数据
 const contentId = ref('')
@@ -105,12 +107,29 @@ const loadContentDetail = async () => {
   try {
     const res = await contentApi.getContentById(contentId.value)
     contentDetail.value = res.data || res
+
+    // 创建浏览记录
+    createBrowseHistory()
   } catch (error) {
     console.error('Load content detail error:', error)
     uni.showToast({
       title: '加载失败',
       icon: 'none'
     })
+  }
+}
+
+// 创建浏览记录
+const createBrowseHistory = async () => {
+  try {
+    await browseHistoryApi.createBrowseHistory({
+      userId: userStore.userId,
+      contentId: contentId.value,
+      contentType: 'note'
+    })
+  } catch (error) {
+    // 浏览记录创建失败不影响用户使用，静默处理
+    console.error('Create browse history error:', error)
   }
 }
 

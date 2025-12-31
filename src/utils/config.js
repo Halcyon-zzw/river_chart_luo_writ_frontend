@@ -1,5 +1,8 @@
 // 全局配置文件
 export const config = {
+  // 应用版本号
+  VERSION: '1.0.0',
+
   // API基础地址
   API_BASE_URL: 'http://localhost:8080',
 
