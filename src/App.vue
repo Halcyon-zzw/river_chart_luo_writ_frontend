@@ -2,6 +2,7 @@
 import { onLaunch, onShow, onHide } from '@dcloudio/uni-app'
 import { useUserStore } from '@/store/user'
 import { useCollectionStore } from '@/store/collection'
+import { setGlobalUserInfo } from '@/api/request'
 
 const userStore = useUserStore()
 const collectionStore = useCollectionStore()
@@ -33,28 +34,38 @@ onHide(() => {
 const initUser = async () => {
   try {
     // 检查是否已登录
-    if (userStore.hasLogin) {
-      console.log('User already logged in:', userStore.userId)
-      // 刷新用户信息
-      await userStore.getUserInfo()
+    if (userStore.hasLogin && userStore.userInfo) {
+      console.log('[App] User already logged in:', userStore.userId)
+
+      // 恢复全局 userInfo（兼容小程序刷新后的情况）
+      if (userStore.userInfo.token) {
+        setGlobalUserInfo(userStore.userInfo)
+        console.log('[App] Global userInfo restored from store')
+        console.log('[App] Token:', userStore.userInfo.token.substring(0, 20) + '...')
+      } else {
+        console.warn('[App] userInfo found but no token, need re-login')
+        // 如果没有 token，需要重新登录
+        await userStore.login()
+      }
+
       return
     }
 
     // 调用登录接口获取用户ID（暂时不传参数）
-    console.log('Calling user login...')
+    console.log('[App] Calling user login...')
     const result = await userStore.login()
 
     if (result.success) {
-      console.log('User login success:', result.userId)
+      console.log('[App] User login success:', result.userId)
     } else {
-      console.error('User login failed:', result.error)
+      console.error('[App] User login failed:', result.error)
       // 登录失败跳转到登录页
       uni.reLaunch({
         url: '/pages/login/login'
       })
     }
   } catch (error) {
-    console.error('Init user error:', error)
+    console.error('[App] Init user error:', error)
     // 异常情况也跳转到登录页
     uni.reLaunch({
       url: '/pages/login/login'

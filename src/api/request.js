@@ -1,23 +1,52 @@
 import config from '@/utils/config'
 
+// 全局 userInfo 对象，用于存储登录后的用户信息
+let globalUserInfo = null
+
+// 设置全局 userInfo（login 成功后调用）
+export const setGlobalUserInfo = (userInfo) => {
+  globalUserInfo = userInfo
+  console.log('[Request] Global userInfo set:', userInfo ? 'Success' : 'Cleared')
+}
+
+// 获取全局 userInfo
+export const getGlobalUserInfo = () => {
+  return globalUserInfo
+}
+
 // 请求拦截器
 const requestInterceptor = (options) => {
-  // 添加 token 到请求头（从 userInfo 中获取）
-  try {
-    const userStore = uni.getStorageSync('user-store')
-    if (userStore) {
-      const userData = typeof userStore === 'string' ? JSON.parse(userStore) : userStore
-      const token = userData.userInfo?.token
+  // 优先从全局对象获取 token（login 后设置）
+  let token = globalUserInfo?.token
 
-      if (token) {
-        options.header = {
-          ...options.header,
-          'Authorization': `Bearer ${token}`
+  // 如果全局对象没有，尝试从 localStorage 读取（兼容小程序刷新后的情况）
+  if (!token) {
+    try {
+      const userStoreData = uni.getStorageSync('user-store')
+      if (userStoreData) {
+        const storeState = typeof userStoreData === 'string' ? JSON.parse(userStoreData) : userStoreData
+        token = storeState.userInfo?.token
+
+        // 同时恢复全局对象
+        if (token) {
+          globalUserInfo = storeState.userInfo
+          console.log('[Request] Token restored from storage')
         }
       }
+    } catch (error) {
+      console.error('[Request] Get token from storage error:', error)
     }
-  } catch (error) {
-    console.error('Get token from storage error:', error)
+  }
+
+  // 添加 token 到请求头
+  if (token) {
+    options.header = {
+      ...options.header,
+      'Authorization': `Bearer ${token}`
+    }
+    console.log('[Request] Authorization header added:', `Bearer ${token.substring(0, 20)}...`)
+  } else {
+    console.warn('[Request] No token available')
   }
 
   // 显示加载提示
@@ -177,18 +206,34 @@ export const http = {
       // 准备请求头
       const header = {}
 
-      // 添加 token 到请求头
-      try {
-        const userStore = uni.getStorageSync('user-store')
-        if (userStore) {
-          const userData = typeof userStore === 'string' ? JSON.parse(userStore) : userStore
-          const token = userData.userInfo?.token
-          if (token) {
-            header['Authorization'] = `Bearer ${token}`
+      // 优先从全局对象获取 token
+      let token = globalUserInfo?.token
+
+      // 如果全局对象没有，尝试从 localStorage 读取
+      if (!token) {
+        try {
+          const userStoreData = uni.getStorageSync('user-store')
+          if (userStoreData) {
+            const storeState = typeof userStoreData === 'string' ? JSON.parse(userStoreData) : userStoreData
+            token = storeState.userInfo?.token
+
+            // 同时恢复全局对象
+            if (token) {
+              globalUserInfo = storeState.userInfo
+              console.log('[Upload] Token restored from storage')
+            }
           }
+        } catch (error) {
+          console.error('[Upload] Get token from storage error:', error)
         }
-      } catch (error) {
-        console.error('Get token from storage error:', error)
+      }
+
+      // 添加 token 到请求头
+      if (token) {
+        header['Authorization'] = `Bearer ${token}`
+        console.log('[Upload] Authorization header added:', `Bearer ${token.substring(0, 20)}...`)
+      } else {
+        console.warn('[Upload] No token available')
       }
 
       uni.uploadFile({

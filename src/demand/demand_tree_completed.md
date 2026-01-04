@@ -492,3 +492,69 @@
    - ✅ 正确处理相对路径 - 自动拼接 API_BASE_URL
 
 -----------分界线，上述需求已经处理，请忽略------------------
+
+✅ 已处理 - 2026-01-04 (第四批)
+
+**file:/// 服务器路径转换为 HTTP URL**
+
+需求1：显示图片时，后端返回 file:/// 开头，需要转换为 HTTP URL
+   状态：已完成
+   - 问题：后端返回 `file:///Users/zhuzhiwei/tmp/uploads/...` 格式的服务器文件路径
+   - 原因：微信小程序不支持 `file:///` 协议访问服务器文件系统
+   - 解决方案：将 file:// 路径转换为 HTTP URL
+
+   实现内容 (src/utils/image.js:16-36)：
+   ```javascript
+   if (imageUrl.startsWith('file://')) {
+     // 移除 file:// 前缀
+     const filePath = imageUrl.replace('file://', '')
+     // 检查是否包含 /uploads/ 目录
+     const uploadsIndex = filePath.indexOf('/uploads/')
+     if (uploadsIndex !== -1) {
+       // 提取 /uploads/ 之后的相对路径
+       const relativePath = filePath.substring(uploadsIndex)
+       return config.API_BASE_URL + relativePath
+     }
+   }
+   ```
+
+   转换示例：
+   - 输入：`file:///Users/zhuzhiwei/tmp/uploads/2026/01/04/xxx.jpg`
+   - 输出：`http://localhost:8080/uploads/2026/01/04/xxx.jpg`
+
+**Token 获取方式优化和调试日志**
+
+需求2：Token 获取方式需要根据最新接口文档修改
+   状态：已完成
+   - 问题：需要确保 token 获取逻辑与最新接口文档（feat_browse 分支）一致
+   - 解决方案：优化代码注释和添加调试日志
+
+   实现内容：
+   1. **接口文档确认** (feat_browse 分支)
+      - 接口：POST /user/login
+      - Token 位置：`data.token`
+
+   2. **请求拦截器优化** (src/api/request.js:4-29)
+      - 添加详细注释说明 Pinia persist 存储结构
+      - 添加调试日志：`[Request] Token added to header`
+      - 添加警告日志：token 或 store 数据缺失时输出警告
+
+   3. **文件上传方法优化** (src/api/request.js:188-208)
+      - 同样的优化应用于 upload 方法
+      - 添加调试日志：`[Upload] Token added to header`
+
+**CLAUDE.md 文档检查**
+
+需求：检查是否有类似记录出错的情况
+   状态：已检查完成
+   - 检查结果：CLAUDE.md 中只有一处 GitHub 链接
+   - 链接地址：https://github.com/Halcyon-zzw/river_chart_luo_writ/blob/feat_browse/docs/river_chart_luo_writ.json
+   - 分支正确：feat_browse（已是最新分支）
+   - 结论：✅ 无其他记录错误
+
+**经验教训**：
+- ⚠️ 应先查看 CLAUDE.md 中记录的文档地址，而不是自行推测
+- ⚠️ 注意区分不同分支的文档差异
+- ✅ 添加详细的调试日志有助于快速定位问题
+
+-----------分界线，上述需求已经处理，请忽略------------------

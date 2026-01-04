@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { userApi } from '@/api'
 import config from '@/utils/config'
+import { setGlobalUserInfo } from '@/api/request'
 
 export const useUserStore = defineStore('user', {
   state: () => ({
@@ -25,18 +26,24 @@ export const useUserStore = defineStore('user', {
         const userId = userData.id || userData.userId
         const token = userData.token
 
-        if (userId) {
+        if (userId && token) {
           this.userId = userId
           this.isLoggedIn = true
           // 保存完整的用户信息（包含 token）
           this.userInfo = userData
 
+          // 设置全局 userInfo，供请求拦截器使用
+          setGlobalUserInfo(userData)
+
+          console.log('[User Store] Login success, userInfo set globally')
+          console.log('[User Store] Token:', token.substring(0, 20) + '...')
+
           return { success: true, userId }
         } else {
-          throw new Error('登录失败：未获取到用户ID')
+          throw new Error('登录失败：未获取到用户ID或Token')
         }
       } catch (error) {
-        console.error('Login error:', error)
+        console.error('[User Store] Login error:', error)
         return { success: false, error }
       }
     },
@@ -73,10 +80,15 @@ export const useUserStore = defineStore('user', {
       this.userInfo = null
       this.isLoggedIn = false
 
+      // 清除全局 userInfo
+      setGlobalUserInfo(null)
+
       // 清除本地存储
       uni.removeStorageSync(config.STORAGE_KEYS.USER_ID)
       uni.removeStorageSync(config.STORAGE_KEYS.USER_INFO)
       uni.removeStorageSync(config.STORAGE_KEYS.TOKEN)
+
+      console.log('[User Store] Logout, global userInfo cleared')
 
       // 跳转到登录页
       uni.reLaunch({
