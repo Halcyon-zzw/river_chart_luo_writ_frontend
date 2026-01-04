@@ -78,7 +78,7 @@ TabBar 页面（4 个标签）
 - 默认超时：10 秒（在请求拦截器中配置）
 
 **API 文档：**
-- 在线文档：https://github.com/Halcyon-zzw/river_chart_luo_writ/blob/feat_page/docs/river_chart_luo_writ.json
+- 在线文档：https://github.com/Halcyon-zzw/river_chart_luo_writ/blob/feat_browse/docs/river_chart_luo_writ.json
 - 本地文档：`src/demand/river_chart_luo_writ.json`（OpenAPI 3.0 格式）
 
 **API 模块：** `src/api/`

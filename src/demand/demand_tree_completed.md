@@ -427,3 +427,68 @@
    - 样式定义：src/pages/tabbar/browse/browse.vue:839-855
 
 -----------分界线，上述需求已经处理，请忽略------------------
+
+✅ 已处理 - 2026-01-04 (第三批)
+
+**浏览历史清空接口参数优化**
+
+需求1：/clear 接口新增 contentType 字段，不需要传 userId
+   状态：已完成
+   - 问题：清空浏览历史接口原本需要传 userId，现改为不传，只传 contentType
+   - 解决方案：修改接口参数，只传 contentType 区分清空类型
+
+   实现内容：
+   1. **API 接口修改** (src/api/browse-history.js:22-23)
+      - 修改参数：从 `userId` 改为 `contentType`
+      - 接口调用：`/browse-history/clear?contentType=image` 或 `?contentType=note`
+      - contentType 可选值：'image' | 'note'（必须指定类型）
+
+   2. **清空全部按钮逻辑修改** (src/pages/tabbar/recent/recent.vue:498-524)
+      - 根据当前 tab 清空对应类型的浏览记录
+      - 提示文本动态显示："确定要清空所有图片/笔记浏览记录吗？"
+      - 调用接口时只传当前 tab 类型：
+        ```javascript
+        await browseHistoryApi.clearAllBrowseHistory(currentTab.value)
+        ```
+
+   优点：
+   - ✅ 简化接口参数，后端可以从 token 中获取 userId
+   - ✅ 用户可以分别管理图片和笔记的浏览历史
+   - ✅ 提示信息更准确，避免误操作
+
+**图片本地路径处理验证**
+
+需求2：显示图片时，后端返回 file:/// 开头需要从本地读取
+   状态：已验证完成
+   - 问题：确保所有显示图片的地方都正确处理本地文件路径（file:///）
+   - 解决方案：统一使用 getFullImageUrl 工具函数
+
+   验证结果：
+   1. **getFullImageUrl 函数已正确实现** (src/utils/image.js:14)
+      ```javascript
+      // file:// 或 file:/// 开头的路径直接返回（从本地读取）
+      if (imageUrl.startsWith('file://')) {
+        return imageUrl
+      }
+      ```
+      说明：`file:///` 也是以 `file://` 开头，会被正确匹配
+
+   2. **所有显示图片的文件已正确使用 getFullImageUrl**（已验证10个文件）
+      - ✅ src/pages/tabbar/recent/recent.vue（浏览历史页）
+      - ✅ src/pages/tabbar/browse/browse.vue（主分类列表）
+      - ✅ src/pages/content/image-detail/image-detail.vue（图片详情）
+      - ✅ src/pages/tabbar/profile/profile.vue（个人中心头像）
+      - ✅ src/pages/category/content-list/content-list.vue（内容列表）
+      - ✅ src/pages/category/sub-list/sub-list.vue（子分类列表）
+      - ✅ src/pages/tabbar/collection/collection.vue（收藏页）
+      - ✅ src/pages/category/create-main-category/create-main-category.vue（创建主分类）
+      - ✅ src/pages/category/create-sub-category/create-sub-category.vue（创建子分类）
+      - ✅ src/pages/content/create-image/create-image.vue（创建图片内容）
+
+   结论：
+   - ✅ 所有图片显示逻辑已统一
+   - ✅ 正确处理本地文件（file:///）- 直接从本地读取
+   - ✅ 正确处理远程文件（http/https）- 直接使用
+   - ✅ 正确处理相对路径 - 自动拼接 API_BASE_URL
+
+-----------分界线，上述需求已经处理，请忽略------------------

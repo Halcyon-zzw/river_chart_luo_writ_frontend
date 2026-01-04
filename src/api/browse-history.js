@@ -18,8 +18,9 @@ export const browseHistoryApi = {
   },
 
   // 清空全部浏览记录
-  clearAllBrowseHistory(userId) {
-    return http.delete('/browse-history/clear', { userId })
+  // contentType: 'image' | 'note'
+  clearAllBrowseHistory(contentType) {
+    return http.delete('/browse-history/clear', { contentType })
   }
 }
 

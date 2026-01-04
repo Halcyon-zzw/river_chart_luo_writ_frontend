@@ -497,14 +497,16 @@ const goToDetail = (item) => {
 
 // 确认清空全部
 const confirmClearAll = () => {
+  const typeText = currentTab.value === 'image' ? '图片' : '笔记'
+
   uni.showModal({
     title: '确认清空',
-    content: '确定要清空所有浏览记录吗？此操作不可恢复',
+    content: `确定要清空所有${typeText}浏览记录吗？此操作不可恢复`,
     confirmColor: '#ff4444',
     success: async (res) => {
       if (res.confirm) {
         try {
-          await browseHistoryApi.clearAllBrowseHistory(userId.value)
+          await browseHistoryApi.clearAllBrowseHistory(currentTab.value)
           uni.showToast({
             title: '已清空',
             icon: 'success'
