@@ -40,38 +40,26 @@ const initUser = async () => {
       return
     }
 
-    // 调用登录接口获取用户ID
+    // 调用登录接口获取用户ID（暂时不传参数）
     console.log('Calling user login...')
-    const result = await userStore.login({
-      // 可以传入设备信息等参数
-      deviceId: getDeviceId()
-    })
+    const result = await userStore.login()
 
     if (result.success) {
       console.log('User login success:', result.userId)
     } else {
       console.error('User login failed:', result.error)
-      // 登录失败提示
-      uni.showToast({
-        title: '登录失败，请重试',
-        icon: 'none',
-        duration: 2000
+      // 登录失败跳转到登录页
+      uni.reLaunch({
+        url: '/pages/login/login'
       })
     }
   } catch (error) {
     console.error('Init user error:', error)
+    // 异常情况也跳转到登录页
+    uni.reLaunch({
+      url: '/pages/login/login'
+    })
   }
-}
-
-// 获取设备ID（简化版，实际可使用更复杂的逻辑）
-const getDeviceId = () => {
-  let deviceId = uni.getStorageSync('deviceId')
-  if (!deviceId) {
-    // 生成随机设备ID
-    deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
-    uni.setStorageSync('deviceId', deviceId)
-  }
-  return deviceId
 }
 </script>
 

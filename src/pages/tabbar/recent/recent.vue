@@ -80,11 +80,11 @@
         >
           <image
             class="item-image"
-            :src="getFullImageUrl(item.content?.imageUrl)"
+            :src="getFullImageUrl(item.contentDTO?.imageUrl)"
             mode="aspectFill"
           ></image>
           <view class="item-info">
-            <text class="item-title">{{ item.content?.title || '未命名' }}</text>
+            <text class="item-title">{{ item.contentDTO?.title || '未命名' }}</text>
             <text class="item-time">{{ formatTime(item.browseTime) }}</text>
           </view>
           <view class="item-delete" @click.stop="deleteSingle(item)">
@@ -102,7 +102,7 @@
           @click="goToDetail(item)"
         >
           <view class="item-content">
-            <text class="item-title">{{ item.content?.title || '未命名' }}</text>
+            <text class="item-title">{{ item.contentDTO?.title || '未命名' }}</text>
             <text class="item-time">{{ formatTime(item.browseTime) }}</text>
           </view>
           <view class="item-delete" @click.stop="deleteSingle(item)">
@@ -162,8 +162,9 @@ const tabs = [
 const timeRanges = [
   { value: 'all', label: '全部' },
   { value: 'today', label: '今天' },
-  { value: 'yesterday', label: '昨天' },
-  { value: 'earlier', label: '更早' }
+  { value: 'three_days', label: '三天内' },
+  { value: 'seven_days', label: '七天内' },
+  { value: 'one_month', label: '一个月内' }
 ]
 
 // 计算属性
@@ -272,7 +273,7 @@ const onTimeRangeChange = (e) => {
 
 // 跳转详情
 const goToDetail = (item) => {
-  const content = item.content
+  const content = item.contentDTO
   if (!content) return
 
   const detailPage = content.contentType === 'image'

@@ -21,14 +21,15 @@ export const useUserStore = defineStore('user', {
         const res = await userApi.login(loginData)
 
         // 根据后端实际返回结构调整
-        const userId = res.data?.id || res.data?.userId || res.id || res.userId
+        const userData = res.data || res
+        const userId = userData.id || userData.userId
+        const token = userData.token
 
         if (userId) {
           this.userId = userId
           this.isLoggedIn = true
-
-          // 获取用户详细信息
-          await this.getUserInfo()
+          // 保存完整的用户信息（包含 token）
+          this.userInfo = userData
 
           return { success: true, userId }
         } else {

@@ -1,15 +1,23 @@
 import config from '@/utils/config'
-import storage from '@/utils/storage'
 
 // 请求拦截器
 const requestInterceptor = (options) => {
-  // 添加token（如果后续需要）
-  const token = storage.get(config.STORAGE_KEYS.TOKEN)
-  if (token) {
-    options.header = {
-      ...options.header,
-      'Authorization': `Bearer ${token}`
+  // 添加 token 到请求头（从 userInfo 中获取）
+  try {
+    const userStore = uni.getStorageSync('user-store')
+    if (userStore) {
+      const userData = typeof userStore === 'string' ? JSON.parse(userStore) : userStore
+      const token = userData.userInfo?.token
+
+      if (token) {
+        options.header = {
+          ...options.header,
+          'Authorization': `Bearer ${token}`
+        }
+      }
     }
+  } catch (error) {
+    console.error('Get token from storage error:', error)
   }
 
   // 显示加载提示
@@ -166,11 +174,29 @@ export const http = {
         })
       }
 
+      // 准备请求头
+      const header = {}
+
+      // 添加 token 到请求头
+      try {
+        const userStore = uni.getStorageSync('user-store')
+        if (userStore) {
+          const userData = typeof userStore === 'string' ? JSON.parse(userStore) : userStore
+          const token = userData.userInfo?.token
+          if (token) {
+            header['Authorization'] = `Bearer ${token}`
+          }
+        }
+      } catch (error) {
+        console.error('Get token from storage error:', error)
+      }
+
       uni.uploadFile({
         url: config.API_BASE_URL + url,
         filePath,
         name,
         formData,
+        header,
         success: (res) => {
           if (options.showLoading !== false) {
             uni.hideLoading()
