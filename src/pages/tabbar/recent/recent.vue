@@ -70,25 +70,77 @@
       refresher-enabled
       :refresher-triggered="refreshing"
     >
-      <!-- 图片列表 -->
-      <view v-if="currentTab === 'image'" class="image-list">
-        <view
-          v-for="item in historyList"
-          :key="item.id"
-          class="image-item"
-          @click="goToDetail(item)"
-        >
-          <image
-            class="item-image"
-            :src="getFullImageUrl(item.contentDTO?.imageUrl)"
-            mode="aspectFill"
-          ></image>
-          <view class="item-info">
-            <text class="item-title">{{ item.contentDTO?.title || '未命名' }}</text>
-            <text class="item-time">{{ formatTime(item.browseTime) }}</text>
+      <!-- 图片瀑布流 -->
+      <view v-if="currentTab === 'image'" class="waterfall-container">
+        <view class="waterfall-column">
+          <view
+            v-for="item in leftColumn"
+            :key="item.id"
+            class="waterfall-item-wrapper"
+          >
+            <!-- 选择框 -->
+            <view v-if="selectionMode" class="checkbox-container" @click.stop="toggleSelection(item)">
+              <view
+                class="checkbox"
+                :class="{ checked: selectedIds.includes(item.id) }"
+              >
+                <text v-if="selectedIds.includes(item.id)" class="checkbox-icon">✓</text>
+              </view>
+            </view>
+
+            <view
+              class="waterfall-item"
+              @touchstart="onImageTouchStart($event, item)"
+              @touchend="onImageTouchEnd($event, item)"
+              @click="selectionMode ? toggleSelection(item) : goToDetail(item)"
+            >
+              <image
+                class="waterfall-image"
+                :src="getFullImageUrl(item.contentDTO?.imageUrl)"
+                mode="widthFix"
+                @load="imageLoad($event, 'left')"
+              ></image>
+              <view class="waterfall-info">
+                <text class="waterfall-title">{{ item.contentDTO?.title || '未命名' }}</text>
+                <text class="waterfall-time">{{ formatTime(item.browseTime) }}</text>
+              </view>
+            </view>
           </view>
-          <view class="item-delete" @click.stop="deleteSingle(item)">
-            <text class="delete-icon">✕</text>
+        </view>
+
+        <view class="waterfall-column">
+          <view
+            v-for="item in rightColumn"
+            :key="item.id"
+            class="waterfall-item-wrapper"
+          >
+            <!-- 选择框 -->
+            <view v-if="selectionMode" class="checkbox-container" @click.stop="toggleSelection(item)">
+              <view
+                class="checkbox"
+                :class="{ checked: selectedIds.includes(item.id) }"
+              >
+                <text v-if="selectedIds.includes(item.id)" class="checkbox-icon">✓</text>
+              </view>
+            </view>
+
+            <view
+              class="waterfall-item"
+              @touchstart="onImageTouchStart($event, item)"
+              @touchend="onImageTouchEnd($event, item)"
+              @click="selectionMode ? toggleSelection(item) : goToDetail(item)"
+            >
+              <image
+                class="waterfall-image"
+                :src="getFullImageUrl(item.contentDTO?.imageUrl)"
+                mode="widthFix"
+                @load="imageLoad($event, 'right')"
+              ></image>
+              <view class="waterfall-info">
+                <text class="waterfall-title">{{ item.contentDTO?.title || '未命名' }}</text>
+                <text class="waterfall-time">{{ formatTime(item.browseTime) }}</text>
+              </view>
+            </view>
           </view>
         </view>
       </view>
@@ -98,15 +150,29 @@
         <view
           v-for="item in historyList"
           :key="item.id"
-          class="note-item"
-          @click="goToDetail(item)"
+          class="note-card-wrapper"
         >
-          <view class="item-content">
-            <text class="item-title">{{ item.contentDTO?.title || '未命名' }}</text>
-            <text class="item-time">{{ formatTime(item.browseTime) }}</text>
+          <!-- 选择框 -->
+          <view v-if="selectionMode" class="checkbox-container" @click.stop="toggleSelection(item)">
+            <view
+              class="checkbox"
+              :class="{ checked: selectedIds.includes(item.id) }"
+            >
+              <text v-if="selectedIds.includes(item.id)" class="checkbox-icon">✓</text>
+            </view>
           </view>
-          <view class="item-delete" @click.stop="deleteSingle(item)">
-            <text class="delete-icon">✕</text>
+
+          <view
+            class="note-card"
+            @touchstart="onNoteTouchStart($event, item)"
+            @touchend="onNoteTouchEnd($event, item)"
+            @click="selectionMode ? toggleSelection(item) : goToDetail(item)"
+          >
+            <text class="note-title">{{ item.contentDTO?.title || '未命名' }}</text>
+            <text class="note-preview">{{ getTextPreview(item.contentDTO?.noteContent) }}</text>
+            <view class="note-footer">
+              <text class="note-time">{{ formatTime(item.browseTime) }}</text>
+            </view>
           </view>
         </view>
       </view>
@@ -129,6 +195,16 @@
       <!-- 底部占位 -->
       <view class="bottom-placeholder"></view>
     </scroll-view>
+
+    <!-- 批量操作栏 -->
+    <view v-if="selectionMode" class="batch-toolbar">
+      <view class="batch-btn cancel" @click="exitSelectionMode">
+        <text>取消</text>
+      </view>
+      <view class="batch-btn delete" @click="batchDelete">
+        <text>删除 ({{ selectedIds.length }})</text>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -151,6 +227,20 @@ const hasMore = ref(true)
 const totalCount = ref(0)
 const searchKeyword = ref('')
 const selectedTimeRange = ref({ value: 'all', label: '全部' })
+
+// 瀑布流相关
+const leftColumn = ref([])
+const rightColumn = ref([])
+const leftHeight = ref(0)
+const rightHeight = ref(0)
+
+// 批量操作
+const selectionMode = ref(false)
+const selectedIds = ref([])
+
+// 长按检测
+let imageTouchStartTime = 0
+let noteTouchStartTime = 0
 
 // Tab配置
 const tabs = [
@@ -179,6 +269,7 @@ onShow(() => {
 const switchTab = (type) => {
   if (currentTab.value === type) return
   currentTab.value = type
+  exitSelectionMode()
   loadHistoryList(true)
 }
 
@@ -222,8 +313,32 @@ const loadHistoryList = async (refresh = false) => {
 
     if (refresh) {
       historyList.value = validList
+      // 图片类型需要重新分配瀑布流
+      if (currentTab.value === 'image') {
+        leftColumn.value = []
+        rightColumn.value = []
+        leftHeight.value = 0
+        rightHeight.value = 0
+        validList.forEach(item => {
+          if (leftHeight.value <= rightHeight.value) {
+            leftColumn.value.push(item)
+          } else {
+            rightColumn.value.push(item)
+          }
+        })
+      }
     } else {
       historyList.value = [...historyList.value, ...validList]
+      // 图片类型追加到瀑布流
+      if (currentTab.value === 'image') {
+        validList.forEach(item => {
+          if (leftHeight.value <= rightHeight.value) {
+            leftColumn.value.push(item)
+          } else {
+            rightColumn.value.push(item)
+          }
+        })
+      }
     }
 
     // 更新总数
@@ -239,6 +354,16 @@ const loadHistoryList = async (refresh = false) => {
   } finally {
     loading.value = false
     refreshing.value = false
+  }
+}
+
+// 图片加载完成 - 更新瀑布流高度
+const imageLoad = (e, column) => {
+  const { height } = e.detail
+  if (column === 'left') {
+    leftHeight.value += height
+  } else {
+    rightHeight.value += height
   }
 }
 
@@ -271,6 +396,91 @@ const onTimeRangeChange = (e) => {
   loadHistoryList(true)
 }
 
+// 图片长按检测
+const onImageTouchStart = (e, item) => {
+  imageTouchStartTime = Date.now()
+}
+
+const onImageTouchEnd = (e, item) => {
+  const touchTime = Date.now() - imageTouchStartTime
+  if (touchTime > 500 && !selectionMode.value) {
+    enterSelectionMode()
+  }
+}
+
+// 笔记长按检测
+const onNoteTouchStart = (e, item) => {
+  noteTouchStartTime = Date.now()
+}
+
+const onNoteTouchEnd = (e, item) => {
+  const touchTime = Date.now() - noteTouchStartTime
+  if (touchTime > 500 && !selectionMode.value) {
+    enterSelectionMode()
+  }
+}
+
+// 进入选择模式
+const enterSelectionMode = () => {
+  selectionMode.value = true
+  selectedIds.value = []
+}
+
+// 退出选择模式
+const exitSelectionMode = () => {
+  selectionMode.value = false
+  selectedIds.value = []
+}
+
+// 切换选择
+const toggleSelection = (item) => {
+  const index = selectedIds.value.indexOf(item.id)
+  if (index > -1) {
+    selectedIds.value.splice(index, 1)
+  } else {
+    selectedIds.value.push(item.id)
+  }
+}
+
+// 批量删除
+const batchDelete = () => {
+  if (selectedIds.value.length === 0) {
+    uni.showToast({
+      title: '请选择要删除的记录',
+      icon: 'none'
+    })
+    return
+  }
+
+  uni.showModal({
+    title: '确认删除',
+    content: `确定要删除选中的 ${selectedIds.value.length} 条浏览记录吗？`,
+    success: async (res) => {
+      if (res.confirm) {
+        try {
+          // 批量删除
+          await Promise.all(
+            selectedIds.value.map(id => browseHistoryApi.deleteBrowseHistory(id))
+          )
+
+          uni.showToast({
+            title: '删除成功',
+            icon: 'success'
+          })
+
+          exitSelectionMode()
+          loadHistoryList(true)
+        } catch (error) {
+          uni.showToast({
+            title: '删除失败',
+            icon: 'none'
+          })
+        }
+      }
+    }
+  })
+}
+
 // 跳转详情
 const goToDetail = (item) => {
   const content = item.contentDTO
@@ -282,31 +492,6 @@ const goToDetail = (item) => {
 
   uni.navigateTo({
     url: `${detailPage}?id=${content.id}`
-  })
-}
-
-// 删除单条记录
-const deleteSingle = (item) => {
-  uni.showModal({
-    title: '确认删除',
-    content: '确定要删除这条浏览记录吗？',
-    success: async (res) => {
-      if (res.confirm) {
-        try {
-          await browseHistoryApi.deleteBrowseHistory(item.id)
-          uni.showToast({
-            title: '删除成功',
-            icon: 'success'
-          })
-          loadHistoryList(true)
-        } catch (error) {
-          uni.showToast({
-            title: '删除失败',
-            icon: 'none'
-          })
-        }
-      }
-    }
   })
 }
 
@@ -334,6 +519,14 @@ const confirmClearAll = () => {
       }
     }
   })
+}
+
+// 获取文本预览（截取前100字符）
+const getTextPreview = (text) => {
+  if (!text) return ''
+  // 去除HTML标签
+  const plainText = text.replace(/<[^>]+>/g, '')
+  return plainText.length > 100 ? plainText.substring(0, 100) + '...' : plainText
 }
 
 // 格式化时间
@@ -366,15 +559,13 @@ const formatTime = (time) => {
   const year = browseDate.getFullYear()
   const month = String(browseDate.getMonth() + 1).padStart(2, '0')
   const day = String(browseDate.getDate()).padStart(2, '0')
-  const hours = String(browseDate.getHours()).padStart(2, '0')
-  const minutes = String(browseDate.getMinutes()).padStart(2, '0')
 
   // 如果是今年，不显示年份
   if (year === now.getFullYear()) {
-    return `${month}-${day} ${hours}:${minutes}`
+    return `${month}-${day}`
   }
 
-  return `${year}-${month}-${day} ${hours}:${minutes}`
+  return `${year}-${month}-${day}`
 }
 </script>
 
@@ -567,70 +758,59 @@ const formatTime = (time) => {
   background: #f5f5f5;
 }
 
-/* 图片列表 */
-.image-list {
-  padding: 20rpx 30rpx;
-}
-
-.image-item {
+/* 图片瀑布流 */
+.waterfall-container {
   display: flex;
-  align-items: center;
-  background: #ffffff;
-  border-radius: 16rpx;
-  margin-bottom: 20rpx;
-  padding: 20rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
-  position: relative;
+  padding: 20rpx 20rpx 0;
+  gap: 20rpx;
 }
 
-.image-item:active {
-  opacity: 0.8;
-}
-
-.item-image {
-  width: 120rpx;
-  height: 120rpx;
-  border-radius: 12rpx;
-  margin-right: 20rpx;
-  flex-shrink: 0;
-}
-
-.item-info {
+.waterfall-column {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 12rpx;
-  min-width: 0;
+  gap: 20rpx;
 }
 
-.item-title {
+.waterfall-item-wrapper {
+  position: relative;
+}
+
+.waterfall-item {
+  background: #ffffff;
+  border-radius: 16rpx;
+  overflow: hidden;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.08);
+}
+
+.waterfall-item:active {
+  opacity: 0.9;
+}
+
+.waterfall-image {
+  width: 100%;
+  display: block;
+}
+
+.waterfall-info {
+  padding: 20rpx;
+}
+
+.waterfall-title {
+  display: block;
   font-size: 28rpx;
   color: #333333;
   font-weight: 500;
+  margin-bottom: 12rpx;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.item-time {
-  font-size: 24rpx;
+.waterfall-time {
+  display: block;
+  font-size: 22rpx;
   color: #999999;
-}
-
-.item-delete {
-  width: 48rpx;
-  height: 48rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-left: 12rpx;
-  flex-shrink: 0;
-}
-
-.delete-icon {
-  font-size: 32rpx;
-  color: #ff4444;
-  font-weight: 600;
 }
 
 /* 笔记列表 */
@@ -638,26 +818,130 @@ const formatTime = (time) => {
   padding: 20rpx 30rpx;
 }
 
-.note-item {
-  display: flex;
-  align-items: center;
+.note-card-wrapper {
+  position: relative;
+  margin-bottom: 20rpx;
+}
+
+.note-card {
   background: #ffffff;
   border-radius: 16rpx;
+  padding: 30rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.08);
+}
+
+.note-card:active {
+  opacity: 0.9;
+}
+
+.note-title {
+  display: block;
+  font-size: 32rpx;
+  color: #333333;
+  font-weight: 600;
+  margin-bottom: 16rpx;
+  line-height: 1.4;
+}
+
+.note-preview {
+  display: block;
+  font-size: 26rpx;
+  color: #666666;
+  line-height: 1.6;
   margin-bottom: 20rpx;
-  padding: 24rpx 20rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
 }
 
-.note-item:active {
-  opacity: 0.8;
-}
-
-.item-content {
-  flex: 1;
+.note-footer {
   display: flex;
-  flex-direction: column;
-  gap: 12rpx;
-  min-width: 0;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.note-time {
+  font-size: 22rpx;
+  color: #999999;
+}
+
+/* 选择框 */
+.checkbox-container {
+  position: absolute;
+  top: 12rpx;
+  right: 12rpx;
+  z-index: 10;
+}
+
+.checkbox {
+  width: 44rpx;
+  height: 44rpx;
+  border: 2rpx solid #ddd;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+}
+
+.checkbox.checked {
+  background: #00c4b3;
+  border-color: #00c4b3;
+}
+
+.checkbox-icon {
+  font-size: 28rpx;
+  color: #ffffff;
+  font-weight: bold;
+}
+
+/* 批量操作栏 */
+.batch-toolbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100rpx;
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20rpx);
+  border-top: 1rpx solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 30rpx;
+  z-index: 100;
+}
+
+.batch-btn {
+  flex: 1;
+  height: 72rpx;
+  border-radius: 36rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+.batch-btn.cancel {
+  background: rgba(0, 0, 0, 0.05);
+  color: #666666;
+  margin-right: 20rpx;
+}
+
+.batch-btn.delete {
+  background: linear-gradient(90deg, #ff6b6b 0%, #ff4444 100%);
+  color: #ffffff;
+}
+
+.batch-btn:active {
+  opacity: 0.7;
 }
 
 /* 加载状态 */

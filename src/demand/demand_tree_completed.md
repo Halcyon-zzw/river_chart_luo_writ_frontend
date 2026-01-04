@@ -359,3 +359,71 @@
    - ✅ URL 本身已足够定位和访问文件
 
 -----------分界线，上述需求已经处理，请忽略------------------
+
+✅ 已处理 - 2026-01-04
+
+**最近浏览页面布局重构**
+
+需求1：浏览页面展示的内容同内容列表页
+   状态：已完成
+   - 问题：recent.vue (最近浏览页) 原使用简单列表布局，需要改为与 content-list.vue 一致的瀑布流+卡片布局
+   - 解决方案：完全重写 recent.vue (985行)
+
+   实现内容：
+   1. **图片内容 - 瀑布流布局**
+      - 双列瀑布流，动态高度平衡
+      - 使用 leftColumn/rightColumn 分别存储左右列数据
+      - imageLoad 事件追踪各列高度，新图片添加到较短的列
+      - 展示缩略图 (contentDTO.thumbnail)
+      - 代码位置：src/pages/tabbar/recent/recent.vue
+
+   2. **笔记内容 - 卡片布局**
+      - 全宽卡片设计
+      - 显示标题 (contentDTO.title)
+      - 显示内容预览 (contentDTO.noteContent)，去除 HTML 标签，最多 100 字符
+      - 渐变背景设计
+
+   3. **长按批量删除**
+      - 长按检测（触摸时长 > 500ms）
+      - 进入选择模式：显示复选框
+      - 底部工具栏：取消 / 删除按钮
+      - 批量删除确认弹窗
+      - 代码实现：onImageTouchStart、onImageTouchEnd、onNoteLongpress
+
+   4. **保留原有功能**
+      - ✅ 搜索功能（关键词搜索）
+      - ✅ 时间筛选（全部、今天、三天内、七天内、一个月内）
+      - ✅ 清空全部浏览记录
+      - ✅ 删除单条记录
+
+   5. **数据路径**
+      - 使用 `item.contentDTO` 获取内容信息（非 `item.content`）
+      - 图片：`contentDTO.thumbnail`、`contentDTO.title`
+      - 笔记：`contentDTO.title`、`contentDTO.noteContent`
+
+   文件修改：
+   - src/pages/tabbar/recent/recent.vue - 完全重写（985行）
+
+**主分类列表总记录数展示**
+
+需求2：主分类列表页在搜索框下方用小字展示总记录数量
+   状态：已完成
+   - 页面：src/pages/tabbar/browse/browse.vue
+
+   实现内容：
+   1. 添加 `totalCount` ref 存储总记录数
+   2. 从 API 响应提取总数：`totalCount.value = res.data?.totalRows || 0`
+   3. 新增固定定位显示区域，位于搜索框下方
+   4. 样式：
+      - 字体大小：24rpx（小字）
+      - 颜色：#999999（灰色）
+      - 居中显示
+      - 固定定位：top: calc(286rpx + safe-area-inset-top)
+   5. 调整滚动容器 padding-top：286rpx → 326rpx
+
+   代码位置：
+   - 数据提取：src/pages/tabbar/browse/browse.vue:299
+   - 模板显示：src/pages/tabbar/browse/browse.vue:35-37
+   - 样式定义：src/pages/tabbar/browse/browse.vue:839-855
+
+-----------分界线，上述需求已经处理，请忽略------------------

@@ -31,6 +31,11 @@
       </view>
     </view>
 
+    <!-- 记录数统计 -->
+    <view class="record-count">
+      <text class="count-text">共 {{ totalCount }} 条记录</text>
+    </view>
+
     <!-- 主分类列表 -->
     <scroll-view
       class="category-scroll"
@@ -245,6 +250,7 @@ const hasMore = ref(true)
 const editingId = ref(null)
 const editingName = ref('')
 const searchKeyword = ref('')
+const totalCount = ref(0)
 
 // 滑动和选择模式
 const swipeId = ref(null)
@@ -293,6 +299,9 @@ const loadCategories = async (refresh = false) => {
     // 后端返回格式：data.rows
     const list = res.data?.rows || []
     const validList = list.filter(item => item != null)
+
+    // 提取总记录数
+    totalCount.value = res.data?.totalRows || 0
 
     if (refresh) {
       categories.value = validList
@@ -826,11 +835,30 @@ onShow(() => {
   opacity: 0.8;
 }
 
+/* 记录数统计 */
+.record-count {
+  position: fixed;
+  top: calc(286rpx + constant(safe-area-inset-top));
+  top: calc(286rpx + env(safe-area-inset-top));
+  left: 0;
+  right: 0;
+  background: #f5f5f5;
+  padding: 0 30rpx 12rpx;
+  z-index: 97;
+  display: flex;
+  justify-content: center;
+}
+
+.count-text {
+  font-size: 24rpx;
+  color: #999999;
+}
+
 /* 滚动容器 */
 .category-scroll {
   height: 100vh;
-  padding-top: calc(286rpx + constant(safe-area-inset-top));
-  padding-top: calc(286rpx + env(safe-area-inset-top));
+  padding-top: calc(326rpx + constant(safe-area-inset-top));
+  padding-top: calc(326rpx + env(safe-area-inset-top));
 }
 
 .category-container {
