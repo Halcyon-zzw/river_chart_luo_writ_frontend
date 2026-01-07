@@ -4,7 +4,13 @@ export const config = {
   VERSION: '1.0.0',
 
   // API基础地址
+  // 注意：微信小程序真机调试要求HTTPS，且验证SSL证书有效性
+  // 开发工具调试：使用本地地址
   API_BASE_URL: 'http://localhost:8080',
+  // API_BASE_URL: 'https://10.10.10.176:8443',
+
+  // 真机调试：使用 ngrok 提供的 HTTPS 地址（替换为你的实际地址）
+  // API_BASE_URL: 'https://abc123-456-789.ngrok-free.app',  // 👈 修改这里
 
   // 分页配置
   PAGE_SIZE: 20,

@@ -7,6 +7,13 @@ export const userApi = {
     return http.post('/user/login', data)
   },
 
+  // 微信登录
+  // 根据最新文档（feat_browse分支），使用 /auth/wechat-login 接口
+  // 参数：{ code, nickName?, avatarUrl? }
+  wechatLogin(data) {
+    return http.post('/auth/wechat-login', data)
+  },
+
   // 创建用户
   create(data) {
     return http.post('/user/create', data)
