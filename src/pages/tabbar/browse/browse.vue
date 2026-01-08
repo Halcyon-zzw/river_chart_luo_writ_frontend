@@ -757,16 +757,16 @@ onShow(() => {
 
 <style scoped>
 .browse-page {
-  min-height: 100vh;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
   background: #f5f5f5;
 }
 
 /* 自定义导航栏 */
 .custom-navbar {
-  position: fixed;
+  position: sticky;
   top: 0;
-  left: 0;
-  right: 0;
   height: 88rpx;
   padding-top: constant(safe-area-inset-top);
   padding-top: env(safe-area-inset-top);
@@ -789,11 +789,9 @@ onShow(() => {
 
 /* 分类标签 */
 .category-label-container {
-  position: fixed;
+  position: sticky;
   top: calc(88rpx + constant(safe-area-inset-top));
   top: calc(88rpx + env(safe-area-inset-top));
-  left: 0;
-  right: 0;
   height: 88rpx;
   background: #f5f5f5;
   display: flex;
@@ -812,14 +810,12 @@ onShow(() => {
 
 /* 搜索容器 */
 .search-container {
-  position: fixed;
+  position: sticky;
   top: calc(176rpx + constant(safe-area-inset-top));
   top: calc(176rpx + env(safe-area-inset-top));
-  left: 0;
-  right: 0;
   background: #f5f5f5;
   padding: 20rpx 30rpx;
-  z-index: 1000;
+  z-index: 98;
   display: flex;
   gap: 20rpx;
   align-items: center;
@@ -876,14 +872,12 @@ onShow(() => {
 
 /* 记录数统计 */
 .record-count {
-  position: fixed;
+  position: sticky;
   top: calc(286rpx + constant(safe-area-inset-top));
   top: calc(286rpx + env(safe-area-inset-top));
-  left: 0;
-  right: 0;
   background: #f5f5f5;
   padding: 0 30rpx 20rpx;
-  z-index: 1000;
+  z-index: 97;
   display: flex;
   justify-content: center;
 }
@@ -895,16 +889,14 @@ onShow(() => {
 
 /* 滚动容器 */
 .category-scroll {
-  height: 100vh;
-  padding-top: calc(360rpx + constant(safe-area-inset-top));
-  padding-top: calc(360rpx + env(safe-area-inset-top));
+  flex: 1;
+  overflow-y: auto;
 }
 
 .category-container {
-  padding: 30rpx 30rpx 0;
+  padding: 0 30rpx;
   background: #f5f5f5;
-  position: relative;
-  z-index: 1;
+  min-height: 100%;
 }
 
 /* 分类卡片包装器 */
@@ -1289,7 +1281,8 @@ onShow(() => {
 
 /* 底部占位 */
 .bottom-placeholder {
-  height: 120rpx;
+  height: calc(120rpx + constant(safe-area-inset-bottom));
+  height: calc(120rpx + env(safe-area-inset-bottom));
 }
 
 /* 悬浮按钮 */
