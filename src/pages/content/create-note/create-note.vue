@@ -17,7 +17,9 @@
           placeholder="请输入标题"
           placeholder-class="input-placeholder"
           :maxlength="100"
+          :adjust-position="false"
           @input="hasModified = true"
+          @focus="onOtherInputFocus"
         />
       </view>
 
@@ -51,6 +53,7 @@
               :maxlength="200"
               :adjust-position="false"
               @input="hasModified = true"
+              @focus="onOtherInputFocus"
             />
           </view>
         </view>
@@ -95,17 +98,7 @@
         </view>
       </view>
 
-      <!-- 操作按钮（跟随内容） -->
-      <view class="action-toolbar">
-        <view class="action-btn cancel" @click="cancel">
-          <text>取消</text>
-        </view>
-        <view class="action-btn submit" @click="submit">
-          <text>{{ isEdit ? '保存' : '发布' }}</text>
-        </view>
-      </view>
-
-      <!-- 底部占位 -->
+      <!-- 底部占位（为固定按钮留空间） -->
       <view class="bottom-placeholder"></view>
     </scroll-view>
 
@@ -118,8 +111,8 @@
       @cancel="handleTagCancel"
     />
 
-    <!-- 格式化工具栏（跟随键盘，仅在编辑器聚焦时显示） -->
-    <view v-if="showFormatToolbar" class="format-toolbar">
+    <!-- 格式化工具栏（跟随键盘，仅在编辑器聚焦且键盘弹起时显示） -->
+    <view v-if="showFormatToolbar && keyboardHeight > 0" class="format-toolbar">
       <scroll-view class="toolbar-scroll" scroll-x>
         <view class="toolbar-content">
           <view class="tool-btn" @click="format('bold')">
@@ -147,6 +140,16 @@
           </view>
         </view>
       </scroll-view>
+    </view>
+
+    <!-- 操作按钮（固定在底部） -->
+    <view class="action-toolbar" :class="{ 'with-toolbar': showFormatToolbar && keyboardHeight > 0 }">
+      <view class="action-btn cancel" @click="cancel">
+        <text>取消</text>
+      </view>
+      <view class="action-btn submit" @click="submit">
+        <text>{{ isEdit ? '保存' : '发布' }}</text>
+      </view>
     </view>
   </view>
 </template>
@@ -291,6 +294,12 @@ const onEditorBlur = () => {
   setTimeout(() => {
     showFormatToolbar.value = false
   }, 200)
+}
+
+// 其他输入框聚焦（标题、简介等）
+const onOtherInputFocus = () => {
+  editorFocused.value = false
+  showFormatToolbar.value = false
 }
 
 // 加载内容详情（编辑模式）
@@ -666,17 +675,32 @@ const submit = async () => {
   color: #999999;
 }
 
-/* 操作按钮容器（跟随内容） */
-.action-toolbar {
-  display: flex;
-  gap: 20rpx;
-  padding: 30rpx 40rpx;
-  margin-top: 40rpx;
+/* 底部占位（为固定按钮留空间） */
+.bottom-placeholder {
+  height: 150rpx;
 }
 
-/* 底部占位（为格式化工具栏留空间） */
-.bottom-placeholder {
-  height: 30rpx;
+/* 操作按钮（固定在底部） */
+.action-toolbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  gap: 20rpx;
+  padding: 20rpx 30rpx;
+  padding-bottom: calc(20rpx + constant(safe-area-inset-bottom));
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20rpx);
+  border-top: 1rpx solid rgba(0, 0, 0, 0.06);
+  z-index: 98;
+  transition: bottom 0.3s ease;
+}
+
+/* 当格式化工具栏显示时，操作按钮上移 */
+.action-toolbar.with-toolbar {
+  bottom: 100rpx;
 }
 
 /* 格式化工具栏（跟随键盘） */
@@ -688,7 +712,7 @@ const submit = async () => {
   background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(20rpx);
   border-top: 1rpx solid rgba(0, 0, 0, 0.08);
-  z-index: 100;
+  z-index: 99;
 }
 
 .toolbar-scroll {
