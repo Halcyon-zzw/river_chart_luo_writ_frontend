@@ -825,10 +825,10 @@ const goToHome = () => {
 
 <style scoped>
 .sub-list-page {
-  min-height: 100vh;
-  background: #f5f5f5;
+  height: 100vh;
   display: flex;
   flex-direction: column;
+  background: #f5f5f5;
 }
 
 /* 分类标签 */
@@ -876,17 +876,15 @@ const goToHome = () => {
 
 /* 搜索容器 */
 .search-container {
-  position: fixed;
+  position: sticky;
   top: calc(88rpx + constant(safe-area-inset-top));
   top: calc(88rpx + env(safe-area-inset-top));
-  left: 0;
-  right: 0;
   background: #f5f5f5;
   padding: 20rpx 30rpx;
   display: flex;
   gap: 20rpx;
   align-items: center;
-  z-index: 1000;
+  z-index: 98;
 }
 
 .search-box {
@@ -940,16 +938,14 @@ const goToHome = () => {
 
 /* 滚动容器 */
 .sub-scroll {
-  height: 100vh;
-  padding-top: calc(198rpx + constant(safe-area-inset-top));
-  padding-top: calc(198rpx + env(safe-area-inset-top));
+  flex: 1;
+  overflow-y: auto;
 }
 
 .sub-container {
-  padding: 30rpx;
+  padding: 0 30rpx;
   background: #f5f5f5;
-  position: relative;
-  z-index: 1;
+  min-height: 100%;
 }
 
 /* 子分类卡片包装器 */
@@ -1324,7 +1320,8 @@ const goToHome = () => {
 
 /* 底部占位 */
 .bottom-placeholder {
-  height: 100rpx;
+  height: calc(120rpx + constant(safe-area-inset-bottom));
+  height: calc(120rpx + env(safe-area-inset-bottom));
 }
 
 /* 悬浮按钮 */

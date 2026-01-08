@@ -112,7 +112,11 @@
     />
 
     <!-- 格式化工具栏（跟随键盘，仅在编辑器聚焦且键盘弹起时显示） -->
-    <view v-if="showFormatToolbar && keyboardHeight > 0" class="format-toolbar">
+    <view
+      v-if="showFormatToolbar && keyboardHeight > 0"
+      class="format-toolbar"
+      :style="{ bottom: keyboardHeight + 'px' }"
+    >
       <scroll-view class="toolbar-scroll" scroll-x>
         <view class="toolbar-content">
           <view class="tool-btn" @click="format('bold')">
@@ -143,7 +147,7 @@
     </view>
 
     <!-- 操作按钮（固定在底部） -->
-    <view class="action-toolbar" :class="{ 'with-toolbar': showFormatToolbar && keyboardHeight > 0 }">
+    <view class="action-toolbar">
       <view class="action-btn cancel" @click="cancel">
         <text>取消</text>
       </view>
@@ -695,12 +699,6 @@ const submit = async () => {
   backdrop-filter: blur(20rpx);
   border-top: 1rpx solid rgba(0, 0, 0, 0.06);
   z-index: 98;
-  transition: bottom 0.3s ease;
-}
-
-/* 当格式化工具栏显示时，操作按钮上移 */
-.action-toolbar.with-toolbar {
-  bottom: 100rpx;
 }
 
 /* 格式化工具栏（跟随键盘） */
