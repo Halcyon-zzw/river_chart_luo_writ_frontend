@@ -1,4 +1,5 @@
 <template>
+  <page-meta :page-style="'overflow: hidden;'"></page-meta>
   <view class="create-category-page">
     <!-- 自定义导航栏 -->
     <custom-nav-bar
@@ -94,14 +95,17 @@
           </view>
         </view>
 
-        <!-- 提交按钮 -->
-        <view class="submit-container">
-          <button class="submit-button" :loading="submitting" @click="handleSubmit">
-            {{ submitting ? '提交中...' : (isEdit ? '保存' : '创建子分类') }}
-          </button>
-        </view>
+        <!-- 底部占位 -->
+        <view class="bottom-placeholder"></view>
       </view>
     </scroll-view>
+
+    <!-- 提交按钮（固定在底部） -->
+    <view class="submit-container-fixed">
+      <button class="submit-button" :loading="submitting" @click="handleSubmit">
+        {{ submitting ? '提交中...' : (isEdit ? '保存' : '创建子分类') }}
+      </button>
+    </view>
 
     <!-- 标签选择器 -->
     <tag-selector
@@ -125,7 +129,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onBackPress } from '@dcloudio/uni-app'
 import { categoryApi, tagApi } from '@/api'
 import { useCategoryStore } from '@/store/category'
 import { getFullImageUrl } from '@/utils/image'
@@ -183,6 +187,28 @@ const hasModified = computed(() => {
 
   return false
 })
+
+// App 平台支持物理返回键拦截
+// #ifdef APP-PLUS
+onBackPress(() => {
+  if (savedSuccessfully.value || submitting.value) {
+    return false
+  }
+  if (hasModified.value) {
+    uni.showModal({
+      title: '提示',
+      content: '您有未保存的修改，确定要离开吗？',
+      success: (res) => {
+        if (res.confirm) {
+          uni.navigateBack()
+        }
+      }
+    })
+    return true
+  }
+  return false
+})
+// #endif
 
 // 标签函数
 const openTagSelector = () => {
@@ -528,7 +554,7 @@ const handleSubmit = async () => {
 /* 文本域 */
 .form-textarea {
   width: 100%;
-  min-height: 200rpx;
+  min-height: 120rpx;
   padding: 24rpx;
   background: #ffffff;
   border-radius: 12rpx;
@@ -549,8 +575,8 @@ const handleSubmit = async () => {
 
 .cover-preview {
   position: relative;
-  width: 100%;
-  height: 400rpx;
+  width: 300rpx;
+  height: 300rpx;
   border-radius: 12rpx;
   overflow: hidden;
 }
@@ -610,10 +636,23 @@ const handleSubmit = async () => {
   color: #999999;
 }
 
-/* 提交按钮 */
-.submit-container {
-  margin-top: 60rpx;
-  padding-bottom: 40rpx;
+/* 底部占位（为固定按钮留出空间） */
+.bottom-placeholder {
+  height: 120rpx;
+}
+
+/* 提交按钮固定容器 */
+.submit-container-fixed {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20rpx 30rpx;
+  padding-bottom: calc(20rpx + constant(safe-area-inset-bottom));
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  background: #ffffff;
+  border-top: 1rpx solid rgba(0, 0, 0, 0.08);
+  z-index: 100;
 }
 
 .submit-button {

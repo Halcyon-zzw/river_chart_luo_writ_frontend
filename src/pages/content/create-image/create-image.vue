@@ -121,7 +121,7 @@
 
 <script setup>
 import { ref, reactive, computed } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onBackPress } from '@dcloudio/uni-app'
 import { contentApi, tagApi } from '@/api'
 import { useCategoryStore } from '@/store/category'
 import config from '@/utils/config'
@@ -202,6 +202,28 @@ onLoad((options) => {
     saveInitialSnapshot()
   }
 })
+
+// App 平台支持物理返回键拦截
+// #ifdef APP-PLUS
+onBackPress(() => {
+  if (savedSuccessfully.value || submitting.value) {
+    return false
+  }
+  if (hasModified.value) {
+    uni.showModal({
+      title: '提示',
+      content: '您有未保存的修改，确定要离开吗？',
+      success: (res) => {
+        if (res.confirm) {
+          uni.navigateBack()
+        }
+      }
+    })
+    return true
+  }
+  return false
+})
+// #endif
 
 // 保存初始数据快照
 const saveInitialSnapshot = () => {

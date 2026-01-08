@@ -54,6 +54,7 @@
           <!-- 滑动容器 -->
           <view
             class="category-card"
+            :class="{ 'long-pressing': longPressingId === category.id }"
             :style="{
               transform: swipeId === category.id ? `translateX(${swipeX}px)` : 'translateX(0)',
               transition: swipeId === category.id && swipeX === -120 ? 'transform 0.3s' : 'none'
@@ -257,6 +258,7 @@ const swipeId = ref(null)
 const swipeX = ref(0)
 const selectionMode = ref(false)
 const selectedIds = ref([])
+const longPressingId = ref(null) // 正在长按的卡片ID
 
 // 标签选择器
 const showTagSelector = ref(false)
@@ -428,7 +430,9 @@ const getDisplayTags = (category) => {
 
 // 触摸开始
 let touchStartX = 0
+let touchStartY = 0
 let touchStartTime = 0
+let longPressTimer = null
 const onTouchStart = (e, category) => {
   if (selectionMode.value || editingId.value) return
 
@@ -439,14 +443,50 @@ const onTouchStart = (e, category) => {
   }
 
   touchStartX = e.touches[0].clientX
+  touchStartY = e.touches[0].clientY
   touchStartTime = Date.now()
+
+  // 启动长按定时器（2秒）
+  longPressTimer = setTimeout(() => {
+    // 长按2秒，进入批量删除模式
+    longPressingId.value = null
+    enterSelectionMode()
+  }, 2000)
+
+  // 设置长按状态，触发缩放动画
+  longPressingId.value = category.id
 }
 
 // 触摸移动
 const onTouchMove = (e, category) => {
   if (selectionMode.value || editingId.value) return
   const touchX = e.touches[0].clientX
+  const touchY = e.touches[0].clientY
   const deltaX = touchX - touchStartX
+  const deltaY = touchY - touchStartY
+
+  // 计算横向和纵向位移的绝对值
+  const absDeltaX = Math.abs(deltaX)
+  const absDeltaY = Math.abs(deltaY)
+
+  // 如果有移动，取消长按定时器和缩放效果
+  if (absDeltaX > 5 || absDeltaY > 5) {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer)
+      longPressTimer = null
+    }
+    longPressingId.value = null
+  }
+
+  // 判断是否为有效的横向滑动：
+  // 1. 横向位移超过 20px
+  // 2. 横向位移大于纵向位移的 1.5 倍
+  const isHorizontalSwipe = absDeltaX > 20 && absDeltaX > absDeltaY * 1.5
+
+  if (!isHorizontalSwipe) {
+    // 不是有效的横向滑动，不处理
+    return
+  }
 
   // 左滑显示编辑和删除按钮
   if (deltaX < 0 && deltaX > -250) {
@@ -462,15 +502,14 @@ const onTouchMove = (e, category) => {
 
 // 触摸结束
 const onTouchEnd = (e, category) => {
-  if (selectionMode.value || editingId.value) return
-
-  const touchTime = Date.now() - touchStartTime
-
-  // 长按检测（超过500ms）
-  if (touchTime > 500 && Math.abs(swipeX.value) < 10) {
-    enterSelectionMode()
-    return
+  // 清除长按定时器和缩放效果
+  if (longPressTimer) {
+    clearTimeout(longPressTimer)
+    longPressTimer = null
   }
+  longPressingId.value = null
+
+  if (selectionMode.value || editingId.value) return
 
   // 滑动检测
   // 动态计算滑动距离：每个按钮100rpx，当前有2个按钮（编辑+删除）
@@ -780,7 +819,7 @@ onShow(() => {
   right: 0;
   background: #f5f5f5;
   padding: 20rpx 30rpx;
-  z-index: 98;
+  z-index: 1000;
   display: flex;
   gap: 20rpx;
   align-items: center;
@@ -844,7 +883,7 @@ onShow(() => {
   right: 0;
   background: #f5f5f5;
   padding: 0 30rpx 12rpx;
-  z-index: 97;
+  z-index: 1000;
   display: flex;
   justify-content: center;
 }
@@ -863,6 +902,9 @@ onShow(() => {
 
 .category-container {
   padding: 30rpx 30rpx 0;
+  background: #f5f5f5;
+  position: relative;
+  z-index: 1;
 }
 
 /* 分类卡片包装器 */
@@ -884,6 +926,12 @@ onShow(() => {
 
 .category-card:active {
   transform: scale(0.98);
+}
+
+/* 长按缩放动画 */
+.category-card.long-pressing {
+  transform: scale(0.95);
+  transition: transform 0.3s ease;
 }
 
 .category-bg,

@@ -6,7 +6,9 @@ export const config = {
   // API基础地址
   // 注意：微信小程序真机调试要求HTTPS，且验证SSL证书有效性
   // 开发工具调试：使用本地地址
-  API_BASE_URL: 'http://localhost:8080',
+  // API_BASE_URL: 'http://localhost:8080',
+  API_BASE_URL: 'http://10.10.10.176:8080',
+
   // API_BASE_URL: 'https://10.10.10.176:8443',
 
   // 真机调试：使用 ngrok 提供的 HTTPS 地址（替换为你的实际地址）

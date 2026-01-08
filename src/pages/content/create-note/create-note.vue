@@ -29,6 +29,8 @@
           :placeholder="'开始输入内容...'"
           @ready="onEditorReady"
           @input="onEditorInput"
+          @focus="onEditorFocus"
+          @blur="onEditorBlur"
         ></editor>
       </view>
 
@@ -105,8 +107,8 @@
       @cancel="handleTagCancel"
     />
 
-    <!-- 编辑器工具栏 -->
-    <view class="toolbar">
+    <!-- 格式化工具栏（跟随键盘，仅在编辑器聚焦时显示） -->
+    <view v-if="showFormatToolbar" class="format-toolbar">
       <scroll-view class="toolbar-scroll" scroll-x>
         <view class="toolbar-content">
           <view class="tool-btn" @click="format('bold')">
@@ -134,14 +136,15 @@
           </view>
         </view>
       </scroll-view>
+    </view>
 
-      <view class="toolbar-actions">
-        <view class="action-btn cancel" @click="cancel">
-          <text>取消</text>
-        </view>
-        <view class="action-btn submit" @click="submit">
-          <text>{{ isEdit ? '保存' : '发布' }}</text>
-        </view>
+    <!-- 操作按钮（固定在底部） -->
+    <view class="action-toolbar-fixed">
+      <view class="action-btn cancel" @click="cancel">
+        <text>取消</text>
+      </view>
+      <view class="action-btn submit" @click="submit">
+        <text>{{ isEdit ? '保存' : '发布' }}</text>
       </view>
     </view>
   </view>
@@ -149,7 +152,7 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onBackPress } from '@dcloudio/uni-app'
 import { contentApi, tagApi } from '@/api'
 import { useCategoryStore } from '@/store/category'
 import config from '@/utils/config'
@@ -165,6 +168,9 @@ const selectedTags = ref([])
 const hasModified = ref(false)
 const submitting = ref(false)
 const savedSuccessfully = ref(false) // 标记是否成功保存
+
+// 格式化工具栏显示控制
+const showFormatToolbar = ref(false)
 
 // 标签相关
 const showTagSelector = ref(false)
@@ -209,6 +215,28 @@ onLoad((options) => {
   }
 })
 
+// App 平台支持物理返回键拦截
+// #ifdef APP-PLUS
+onBackPress(() => {
+  if (savedSuccessfully.value || submitting.value) {
+    return false
+  }
+  if (hasModified.value) {
+    uni.showModal({
+      title: '提示',
+      content: '您有未保存的修改，确定要离开吗？',
+      success: (res) => {
+        if (res.confirm) {
+          uni.navigateBack()
+        }
+      }
+    })
+    return true
+  }
+  return false
+})
+// #endif
+
 // 编辑器就绪
 const onEditorReady = () => {
   uni.createSelectorQuery()
@@ -224,6 +252,19 @@ const onEditorInput = (e) => {
   // 实时更新内容（可选）
   console.log('Editor input:', e.detail.html)
   hasModified.value = true
+}
+
+// 编辑器聚焦
+const onEditorFocus = () => {
+  showFormatToolbar.value = true
+}
+
+// 编辑器失焦
+const onEditorBlur = () => {
+  // 延迟隐藏，避免点击工具栏按钮时立即隐藏
+  setTimeout(() => {
+    showFormatToolbar.value = false
+  }, 200)
 }
 
 // 加载内容详情（编辑模式）
@@ -599,13 +640,13 @@ const submit = async () => {
   color: #999999;
 }
 
-/* 底部占位 */
+/* 底部占位（为固定操作按钮留空间） */
 .bottom-placeholder {
-  height: 300rpx;
+  height: 150rpx;
 }
 
-/* 工具栏 */
-.toolbar {
+/* 格式化工具栏（跟随键盘） */
+.format-toolbar {
   position: fixed;
   bottom: 0;
   left: 0;
@@ -613,8 +654,6 @@ const submit = async () => {
   background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(20rpx);
   border-top: 1rpx solid rgba(0, 0, 0, 0.08);
-  padding-bottom: constant(safe-area-inset-bottom);
-  padding-bottom: env(safe-area-inset-bottom);
   z-index: 100;
 }
 
@@ -673,10 +712,21 @@ const submit = async () => {
   margin: 0 8rpx;
 }
 
-.toolbar-actions {
+/* 操作按钮固定容器 */
+.action-toolbar-fixed {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
   display: flex;
   gap: 20rpx;
   padding: 20rpx 30rpx;
+  padding-bottom: calc(20rpx + constant(safe-area-inset-bottom));
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20rpx);
+  border-top: 1rpx solid rgba(0, 0, 0, 0.06);
+  z-index: 99;
 }
 
 .action-btn {

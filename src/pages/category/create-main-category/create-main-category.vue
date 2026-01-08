@@ -1,4 +1,5 @@
 <template>
+  <page-meta :page-style="'overflow: hidden;'"></page-meta>
   <view class="create-category-page">
     <!-- 自定义导航栏 -->
     <custom-nav-bar
@@ -76,14 +77,17 @@
           </view>
         </view>
 
-        <!-- 提交按钮 -->
-        <view class="submit-container">
-          <button class="submit-button" :loading="submitting" @click="handleSubmit">
-            {{ submitting ? '提交中...' : (isEdit ? '保存' : '创建分类') }}
-          </button>
-        </view>
+        <!-- 底部占位 -->
+        <view class="bottom-placeholder"></view>
       </view>
     </scroll-view>
+
+    <!-- 提交按钮（固定在底部） -->
+    <view class="submit-container-fixed">
+      <button class="submit-button" :loading="submitting" @click="handleSubmit">
+        {{ submitting ? '提交中...' : (isEdit ? '保存' : '创建分类') }}
+      </button>
+    </view>
 
     <!-- 标签选择器 -->
     <tag-selector
@@ -408,7 +412,7 @@ const handleSubmit = async () => {
 /* 文本域 */
 .form-textarea {
   width: 100%;
-  min-height: 200rpx;
+  min-height: 120rpx;
   padding: 24rpx;
   background: #ffffff;
   border-radius: 12rpx;
@@ -429,8 +433,8 @@ const handleSubmit = async () => {
 
 .cover-preview {
   position: relative;
-  width: 100%;
-  height: 400rpx;
+  width: 300rpx;
+  height: 300rpx;
   border-radius: 12rpx;
   overflow: hidden;
 }
@@ -539,10 +543,23 @@ const handleSubmit = async () => {
   background: rgba(0, 196, 179, 0.2);
 }
 
-/* 提交按钮 */
-.submit-container {
-  margin-top: 60rpx;
-  padding-bottom: 40rpx;
+/* 底部占位（为固定按钮留出空间） */
+.bottom-placeholder {
+  height: 120rpx;
+}
+
+/* 提交按钮固定容器 */
+.submit-container-fixed {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20rpx 30rpx;
+  padding-bottom: calc(20rpx + constant(safe-area-inset-bottom));
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  background: #ffffff;
+  border-top: 1rpx solid rgba(0, 0, 0, 0.08);
+  z-index: 100;
 }
 
 .submit-button {
