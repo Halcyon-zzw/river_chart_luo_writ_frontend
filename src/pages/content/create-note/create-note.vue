@@ -49,6 +49,7 @@
               placeholder="请输入简介（可选）"
               placeholder-class="input-placeholder"
               :maxlength="200"
+              :adjust-position="false"
               @input="hasModified = true"
             />
           </view>
@@ -91,6 +92,16 @@
               </view>
             </view>
           </view>
+        </view>
+      </view>
+
+      <!-- 操作按钮（跟随内容） -->
+      <view class="action-toolbar">
+        <view class="action-btn cancel" @click="cancel">
+          <text>取消</text>
+        </view>
+        <view class="action-btn submit" @click="submit">
+          <text>{{ isEdit ? '保存' : '发布' }}</text>
         </view>
       </view>
 
@@ -137,21 +148,11 @@
         </view>
       </scroll-view>
     </view>
-
-    <!-- 操作按钮（固定在底部） -->
-    <view class="action-toolbar-fixed">
-      <view class="action-btn cancel" @click="cancel">
-        <text>取消</text>
-      </view>
-      <view class="action-btn submit" @click="submit">
-        <text>{{ isEdit ? '保存' : '发布' }}</text>
-      </view>
-    </view>
   </view>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { onLoad, onBackPress } from '@dcloudio/uni-app'
 import { contentApi, tagApi } from '@/api'
 import { useCategoryStore } from '@/store/category'
@@ -171,6 +172,8 @@ const savedSuccessfully = ref(false) // 标记是否成功保存
 
 // 格式化工具栏显示控制
 const showFormatToolbar = ref(false)
+const keyboardHeight = ref(0) // 键盘高度
+const editorFocused = ref(false) // 编辑器是否聚焦
 
 // 标签相关
 const showTagSelector = ref(false)
@@ -215,6 +218,27 @@ onLoad((options) => {
   }
 })
 
+// 监听键盘高度变化
+onMounted(() => {
+  uni.onKeyboardHeightChange((res) => {
+    keyboardHeight.value = res.height
+    // 键盘收起时隐藏格式化工具栏
+    if (res.height === 0) {
+      showFormatToolbar.value = false
+      editorFocused.value = false
+    }
+    // 键盘弹起且编辑器聚焦时显示格式化工具栏
+    else if (res.height > 0 && editorFocused.value) {
+      showFormatToolbar.value = true
+    }
+  })
+})
+
+// 清理监听
+onUnmounted(() => {
+  uni.offKeyboardHeightChange()
+})
+
 // App 平台支持物理返回键拦截
 // #ifdef APP-PLUS
 onBackPress(() => {
@@ -256,11 +280,13 @@ const onEditorInput = (e) => {
 
 // 编辑器聚焦
 const onEditorFocus = () => {
+  editorFocused.value = true
   showFormatToolbar.value = true
 }
 
 // 编辑器失焦
 const onEditorBlur = () => {
+  editorFocused.value = false
   // 延迟隐藏，避免点击工具栏按钮时立即隐藏
   setTimeout(() => {
     showFormatToolbar.value = false
@@ -640,9 +666,17 @@ const submit = async () => {
   color: #999999;
 }
 
-/* 底部占位（为固定操作按钮留空间） */
+/* 操作按钮容器（跟随内容） */
+.action-toolbar {
+  display: flex;
+  gap: 20rpx;
+  padding: 30rpx 40rpx;
+  margin-top: 40rpx;
+}
+
+/* 底部占位（为格式化工具栏留空间） */
 .bottom-placeholder {
-  height: 150rpx;
+  height: 30rpx;
 }
 
 /* 格式化工具栏（跟随键盘） */
@@ -710,23 +744,6 @@ const submit = async () => {
   height: 48rpx;
   background: rgba(0, 0, 0, 0.08);
   margin: 0 8rpx;
-}
-
-/* 操作按钮固定容器 */
-.action-toolbar-fixed {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  gap: 20rpx;
-  padding: 20rpx 30rpx;
-  padding-bottom: calc(20rpx + constant(safe-area-inset-bottom));
-  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
-  background: rgba(255, 255, 255, 0.98);
-  backdrop-filter: blur(20rpx);
-  border-top: 1rpx solid rgba(0, 0, 0, 0.06);
-  z-index: 99;
 }
 
 .action-btn {

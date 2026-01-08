@@ -882,7 +882,7 @@ onShow(() => {
   left: 0;
   right: 0;
   background: #f5f5f5;
-  padding: 0 30rpx 12rpx;
+  padding: 0 30rpx 20rpx;
   z-index: 1000;
   display: flex;
   justify-content: center;
@@ -896,8 +896,8 @@ onShow(() => {
 /* 滚动容器 */
 .category-scroll {
   height: 100vh;
-  padding-top: calc(326rpx + constant(safe-area-inset-top));
-  padding-top: calc(326rpx + env(safe-area-inset-top));
+  padding-top: calc(360rpx + constant(safe-area-inset-top));
+  padding-top: calc(360rpx + env(safe-area-inset-top));
 }
 
 .category-container {
