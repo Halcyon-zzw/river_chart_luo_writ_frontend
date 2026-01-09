@@ -256,6 +256,7 @@ const swipeX = ref(0)
 const selectionMode = ref(false)
 const selectedIds = ref([])
 const longPressingId = ref(null) // 正在长按的卡片ID
+const longPressTriggered = ref(false) // 本次触摸是否触发了长按
 
 // 标签展开/收起状态
 const expandedTags = ref(new Set())
@@ -525,6 +526,9 @@ let longPressTimer = null
 const onTouchStart = (e, item) => {
   if (selectionMode.value) return
 
+  // 重置长按触发标志
+  longPressTriggered.value = false
+
   // 如果点击的不是当前已滑动的卡片，则隐藏之前的删除按钮
   if (swipeId.value && swipeId.value !== item.id) {
     swipeId.value = null
@@ -535,12 +539,13 @@ const onTouchStart = (e, item) => {
   touchStartY = e.touches[0].clientY
   touchStartTime = Date.now()
 
-  // 启动长按定时器（2秒）
+  // 启动长按定时器（0.5秒）
   longPressTimer = setTimeout(() => {
-    // 长按2秒，进入批量删除模式
+    // 长按0.5秒，进入批量删除模式
     longPressingId.value = null
-    enterSelectionMode()
-  }, 2000)
+    longPressTriggered.value = true  // 标记本次触摸触发了长按
+    enterSelectionMode(item.id)
+  }, 500)
 
   // 设置长按状态，触发缩放动画
   longPressingId.value = item.id
@@ -549,12 +554,16 @@ const onTouchStart = (e, item) => {
 // 图片长按相关变量
 let imageLongPressTimer = null
 const onImageTouchStart = (e, item) => {
-  // 启动长按定时器（2秒）
+  // 重置长按触发标志
+  longPressTriggered.value = false
+
+  // 启动长按定时器（0.5秒）
   imageLongPressTimer = setTimeout(() => {
-    // 长按2秒，进入批量删除模式
+    // 长按0.5秒，进入批量删除模式
     longPressingId.value = null
-    enterSelectionMode()
-  }, 2000)
+    longPressTriggered.value = true  // 标记本次触摸触发了长按
+    enterSelectionMode(item.id)
+  }, 500)
 
   // 设置长按状态，触发缩放动画
   longPressingId.value = item.id
@@ -638,9 +647,10 @@ const onTouchEnd = (e, item) => {
 }
 
 // 进入选择模式
-const enterSelectionMode = () => {
+const enterSelectionMode = (itemId = null) => {
   selectionMode.value = true
-  selectedIds.value = []
+  // 如果提供了 itemId，自动勾选该项
+  selectedIds.value = itemId ? [itemId] : []
   swipeId.value = null
   swipeX.value = 0
 }
@@ -653,6 +663,12 @@ const exitSelectionMode = () => {
 
 // 切换选择
 const toggleSelection = (item) => {
+  // 如果本次触摸触发了长按，忽略 touchend 后的 click 事件
+  if (longPressTriggered.value) {
+    longPressTriggered.value = false  // 重置标志
+    return
+  }
+
   const index = selectedIds.value.indexOf(item.id)
   if (index > -1) {
     selectedIds.value.splice(index, 1)

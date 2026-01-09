@@ -19,6 +19,7 @@
 npm run dev:mp-weixin
 
 # 文件变更时自动重新构建（使用 nodemon）
+终端使用命令开启：
 npx nodemon
 
 # H5 开发

@@ -90,7 +90,9 @@
 
             <view
               class="waterfall-item"
+              :class="{ 'long-pressing': longPressingId === item.id }"
               @touchstart="onImageTouchStart($event, item)"
+              @touchmove="onImageTouchMove($event, item)"
               @touchend="onImageTouchEnd($event, item)"
               @click="selectionMode ? toggleSelection(item) : goToDetail(item)"
             >
@@ -126,7 +128,9 @@
 
             <view
               class="waterfall-item"
+              :class="{ 'long-pressing': longPressingId === item.id }"
               @touchstart="onImageTouchStart($event, item)"
+              @touchmove="onImageTouchMove($event, item)"
               @touchend="onImageTouchEnd($event, item)"
               @click="selectionMode ? toggleSelection(item) : goToDetail(item)"
             >
@@ -164,7 +168,9 @@
 
           <view
             class="note-card"
+            :class="{ 'long-pressing': longPressingId === item.id }"
             @touchstart="onNoteTouchStart($event, item)"
+            @touchmove="onNoteTouchMove($event, item)"
             @touchend="onNoteTouchEnd($event, item)"
             @click="selectionMode ? toggleSelection(item) : goToDetail(item)"
           >
@@ -241,6 +247,14 @@ const selectedIds = ref([])
 // 长按检测
 let imageTouchStartTime = 0
 let noteTouchStartTime = 0
+let imageTouchStartX = 0
+let imageTouchStartY = 0
+let noteTouchStartX = 0
+let noteTouchStartY = 0
+let imageLongPressTimer = null
+let noteLongPressTimer = null
+const longPressingId = ref(null) // 正在长按的卡片ID
+const longPressTriggered = ref(false) // 本次触摸是否触发了长按
 
 // Tab配置
 const tabs = [
@@ -397,32 +411,109 @@ const onTimeRangeChange = (e) => {
 
 // 图片长按检测
 const onImageTouchStart = (e, item) => {
+  if (selectionMode.value) return
+
+  // 重置长按触发标志
+  longPressTriggered.value = false
+
   imageTouchStartTime = Date.now()
+  imageTouchStartX = e.touches[0].clientX
+  imageTouchStartY = e.touches[0].clientY
+
+  // 启动长按定时器（0.5秒）
+  imageLongPressTimer = setTimeout(() => {
+    // 长按0.5秒，进入批量删除模式
+    longPressingId.value = null
+    longPressTriggered.value = true  // 标记本次触摸触发了长按
+    enterSelectionMode(item.id)
+  }, 500)
+
+  // 设置长按状态，触发缩放动画
+  longPressingId.value = item.id
+}
+
+const onImageTouchMove = (e, item) => {
+  if (selectionMode.value) return
+
+  const touchX = e.touches[0].clientX
+  const touchY = e.touches[0].clientY
+  const deltaX = Math.abs(touchX - imageTouchStartX)
+  const deltaY = Math.abs(touchY - imageTouchStartY)
+
+  // 如果有任何方向的移动超过5px，取消长按
+  if (deltaX > 5 || deltaY > 5) {
+    if (imageLongPressTimer) {
+      clearTimeout(imageLongPressTimer)
+      imageLongPressTimer = null
+    }
+    longPressingId.value = null
+  }
 }
 
 const onImageTouchEnd = (e, item) => {
-  const touchTime = Date.now() - imageTouchStartTime
-  if (touchTime > 500 && !selectionMode.value) {
-    enterSelectionMode()
+  // 清除长按定时器和缩放效果
+  if (imageLongPressTimer) {
+    clearTimeout(imageLongPressTimer)
+    imageLongPressTimer = null
   }
+  longPressingId.value = null
 }
 
 // 笔记长按检测
 const onNoteTouchStart = (e, item) => {
+  if (selectionMode.value) return
+
+  // 重置长按触发标志
+  longPressTriggered.value = false
+
   noteTouchStartTime = Date.now()
+  noteTouchStartX = e.touches[0].clientX
+  noteTouchStartY = e.touches[0].clientY
+
+  // 启动长按定时器（0.5秒）
+  noteLongPressTimer = setTimeout(() => {
+    // 长按0.5秒，进入批量删除模式
+    longPressingId.value = null
+    longPressTriggered.value = true  // 标记本次触摸触发了长按
+    enterSelectionMode(item.id)
+  }, 500)
+
+  // 设置长按状态，触发缩放动画
+  longPressingId.value = item.id
 }
 
-const onNoteTouchEnd = (e, item) => {
-  const touchTime = Date.now() - noteTouchStartTime
-  if (touchTime > 500 && !selectionMode.value) {
-    enterSelectionMode()
+const onNoteTouchMove = (e, item) => {
+  if (selectionMode.value) return
+
+  const touchX = e.touches[0].clientX
+  const touchY = e.touches[0].clientY
+  const deltaX = Math.abs(touchX - noteTouchStartX)
+  const deltaY = Math.abs(touchY - noteTouchStartY)
+
+  // 如果有任何方向的移动超过5px，取消长按
+  if (deltaX > 5 || deltaY > 5) {
+    if (noteLongPressTimer) {
+      clearTimeout(noteLongPressTimer)
+      noteLongPressTimer = null
+    }
+    longPressingId.value = null
   }
 }
 
+const onNoteTouchEnd = (e, item) => {
+  // 清除长按定时器和缩放效果
+  if (noteLongPressTimer) {
+    clearTimeout(noteLongPressTimer)
+    noteLongPressTimer = null
+  }
+  longPressingId.value = null
+}
+
 // 进入选择模式
-const enterSelectionMode = () => {
+const enterSelectionMode = (itemId = null) => {
   selectionMode.value = true
-  selectedIds.value = []
+  // 如果提供了 itemId，自动勾选该项
+  selectedIds.value = itemId ? [itemId] : []
 }
 
 // 退出选择模式
@@ -433,6 +524,12 @@ const exitSelectionMode = () => {
 
 // 切换选择
 const toggleSelection = (item) => {
+  // 如果本次触摸触发了长按，忽略 touchend 后的 click 事件
+  if (longPressTriggered.value) {
+    longPressTriggered.value = false  // 重置标志
+    return
+  }
+
   const index = selectedIds.value.indexOf(item.id)
   if (index > -1) {
     selectedIds.value.splice(index, 1)
@@ -788,6 +885,11 @@ const formatTime = (time) => {
   opacity: 0.9;
 }
 
+.waterfall-item.long-pressing {
+  transform: scale(0.95);
+  transition: transform 0.3s ease;
+}
+
 .waterfall-image {
   width: 100%;
   display: block;
@@ -833,6 +935,11 @@ const formatTime = (time) => {
 
 .note-card:active {
   opacity: 0.9;
+}
+
+.note-card.long-pressing {
+  transform: scale(0.95);
+  transition: transform 0.3s ease;
 }
 
 .note-title {

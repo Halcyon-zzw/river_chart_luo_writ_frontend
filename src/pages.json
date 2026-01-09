@@ -74,7 +74,8 @@
 			"path": "pages/content/create-note/create-note",
 			"style": {
 				"navigationBarTitleText": "创建笔记",
-				"navigationStyle": "custom"
+				"navigationStyle": "custom",
+				"disableScroll": true
 			}
 		},
 		{

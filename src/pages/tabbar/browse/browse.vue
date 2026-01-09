@@ -259,6 +259,8 @@ const swipeX = ref(0)
 const selectionMode = ref(false)
 const selectedIds = ref([])
 const longPressingId = ref(null) // 正在长按的卡片ID
+const justEnteredSelectionMode = ref(false) // 刚进入选择模式的标志
+const longPressTriggered = ref(false) // 本次触摸是否触发了长按
 
 // 标签选择器
 const showTagSelector = ref(false)
@@ -436,6 +438,9 @@ let longPressTimer = null
 const onTouchStart = (e, category) => {
   if (selectionMode.value || editingId.value) return
 
+  // 重置长按触发标志
+  longPressTriggered.value = false
+
   // 如果点击的不是当前已滑动的卡片，则隐藏之前的删除按钮
   if (swipeId.value && swipeId.value !== category.id) {
     swipeId.value = null
@@ -446,12 +451,13 @@ const onTouchStart = (e, category) => {
   touchStartY = e.touches[0].clientY
   touchStartTime = Date.now()
 
-  // 启动长按定时器（2秒）
+  // 启动长按定时器（0.5秒）
   longPressTimer = setTimeout(() => {
-    // 长按2秒，进入批量删除模式
+    // 长按0.5秒，进入批量删除模式
     longPressingId.value = null
-    enterSelectionMode()
-  }, 2000)
+    longPressTriggered.value = true  // 标记本次触摸触发了长按
+    enterSelectionMode(category)  // 传入完整对象
+  }, 500)
 
   // 设置长按状态，触发缩放动画
   longPressingId.value = category.id
@@ -535,11 +541,23 @@ const handleSwipeEdit = (category) => {
 }
 
 // 进入选择模式
-const enterSelectionMode = () => {
+const enterSelectionMode = (item = null) => {
   selectionMode.value = true
-  selectedIds.value = []
+  // 如果提供了 item 且没有子项，自动勾选该项
+  if (item && item.subCategorySize === 0) {
+    selectedIds.value = [item.id]
+  } else {
+    // 有子项时只进入选择模式，不勾选，不提示
+    selectedIds.value = []
+  }
   swipeId.value = null
   swipeX.value = 0
+
+  // 设置标志，防止 touchend 触发的 click 事件取消选中
+  justEnteredSelectionMode.value = true
+  setTimeout(() => {
+    justEnteredSelectionMode.value = false
+  }, 300)
 }
 
 // 退出选择模式
@@ -550,6 +568,17 @@ const exitSelectionMode = () => {
 
 // 切换选择
 const toggleSelection = (category) => {
+  // 如果本次触摸触发了长按，忽略 touchend 后的 click 事件
+  if (longPressTriggered.value) {
+    longPressTriggered.value = false  // 重置标志
+    return
+  }
+
+  // 如果刚进入选择模式，忽略这次点击（防止 touchend 触发的 click 取消选中）
+  if (justEnteredSelectionMode.value) {
+    return
+  }
+
   if (category.subCategorySize > 0) {
     uni.showToast({
       title: '该分类下还有内容，无法选中',
