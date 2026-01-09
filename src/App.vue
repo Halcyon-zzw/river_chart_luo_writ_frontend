@@ -13,11 +13,6 @@ onLaunch(async () => {
 
   // 初始化用户登录
   await initUser()
-
-  // 加载收藏列表
-  if (userStore.hasLogin) {
-    collectionStore.loadCollections()
-  }
 })
 
 // 应用显示

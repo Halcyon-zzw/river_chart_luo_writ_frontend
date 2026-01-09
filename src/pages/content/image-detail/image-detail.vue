@@ -219,7 +219,6 @@ const loadContentDetail = async () => {
 const createBrowseHistory = async () => {
   try {
     await browseHistoryApi.createBrowseHistory({
-      userId: userStore.userId,
       contentId: contentId.value,
       contentType: 'image'
     })

@@ -1,7 +1,7 @@
 import http from './request'
 
 // 浏览历史相关API
-export const browseHistoryApi = {
+const browseHistoryApi = {
   // 分页查询浏览历史
   getBrowseHistoryList(params) {
     return http.post('/browse-history/page', params)
@@ -24,4 +24,5 @@ export const browseHistoryApi = {
   }
 }
 
+export { browseHistoryApi }
 export default browseHistoryApi

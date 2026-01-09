@@ -92,6 +92,12 @@ const hasMore = ref(true)
 
 // 加载收藏列表
 const loadCollections = async (refresh = false) => {
+  // 未登录时不请求
+  if (!userStore.hasLogin) {
+    collections.value = []
+    return
+  }
+
   if (loading.value) return
 
   if (refresh) {
@@ -106,7 +112,6 @@ const loadCollections = async (refresh = false) => {
 
   try {
     const res = await collectionApi.getCollectionList({
-      userId: userStore.userId,
       pageNum: currentPage.value,
       pageSize: 20
     })

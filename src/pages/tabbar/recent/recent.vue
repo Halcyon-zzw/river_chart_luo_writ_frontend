@@ -289,7 +289,6 @@ const loadHistoryList = async (refresh = false) => {
 
   try {
     const params = {
-      userId: userId.value,
       contentType: currentTab.value,
       pageNum: currentPage.value,
       pageSize: 20
