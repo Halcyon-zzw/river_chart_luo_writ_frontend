@@ -9,31 +9,37 @@
 
     <scroll-view class="content-scroll" scroll-y>
       <!-- 图片上传区域 -->
-      <view class="upload-section">
-        <view class="upload-grid">
-          <!-- 已上传的图片 -->
-          <view
-            v-for="(img, index) in imageList"
-            :key="index"
-            class="image-item"
-            @click="previewImage(index)"
-          >
-            <image class="upload-image" :src="getFullImageUrl(img.url)" mode="aspectFill"></image>
-            <!-- 删除按钮 -->
-            <view class="delete-btn" @click.stop="removeImage(index)">
-              <text class="delete-icon">✕</text>
+      <view class="collapsible-section">
+        <view class="section-header" @click="toggleSection('images')">
+          <text class="section-title">图片</text>
+          <text class="section-arrow">{{ sectionExpanded.images ? '▼' : '▶' }}</text>
+        </view>
+        <view v-if="sectionExpanded.images" class="section-content">
+          <view class="upload-grid">
+            <!-- 已上传的图片 -->
+            <view
+              v-for="(img, index) in imageList"
+              :key="index"
+              class="image-item"
+              @click="previewImage(index)"
+            >
+              <image class="upload-image" :src="getFullImageUrl(img.url)" mode="aspectFill"></image>
+              <!-- 删除按钮 -->
+              <view class="delete-btn" @click.stop="removeImage(index)">
+                <text class="delete-icon">✕</text>
+              </view>
             </view>
-          </view>
 
-          <!-- 添加图片按钮 -->
-          <view
-            v-if="imageList.length < maxImages"
-            class="upload-btn"
-            @click="chooseImage"
-          >
-            <text class="upload-icon">+</text>
-            <text class="upload-text">添加图片</text>
-            <text class="upload-tip">{{ imageList.length }}/{{ maxImages }}</text>
+            <!-- 添加图片按钮 -->
+            <view
+              v-if="imageList.length < maxImages"
+              class="upload-btn"
+              @click="chooseImage"
+            >
+              <text class="upload-icon">+</text>
+              <text class="upload-text">添加图片</text>
+              <text class="upload-tip">{{ imageList.length }}/{{ maxImages }}</text>
+            </view>
           </view>
         </view>
       </view>
@@ -41,54 +47,76 @@
       <!-- 表单区域 -->
       <view class="form-section">
         <!-- 标题 -->
-        <view class="form-item">
-          <text class="form-label">标题</text>
-          <input
-            class="form-input"
-            v-model="formData.name"
-            placeholder="请输入标题（必填）"
-            placeholder-class="input-placeholder"
-          />
+        <view class="collapsible-section">
+          <view class="section-header" @click="toggleSection('title')">
+            <text class="section-title">标题</text>
+            <text class="section-arrow">{{ sectionExpanded.title ? '▼' : '▶' }}</text>
+          </view>
+          <view v-if="sectionExpanded.title" class="section-content">
+            <input
+              class="form-input"
+              v-model="formData.name"
+              placeholder="请输入标题（必填）"
+              placeholder-class="input-placeholder"
+              :adjust-position="false"
+            />
+          </view>
         </view>
 
         <!-- 描述 -->
-        <view class="form-item">
-          <text class="form-label">描述</text>
-          <textarea
-            class="form-textarea"
-            v-model="formData.description"
-            placeholder="请输入描述（选填）"
-            placeholder-class="input-placeholder"
-            :maxlength="500"
-            :show-confirm-bar="false"
-          />
+        <view class="collapsible-section">
+          <view class="section-header" @click="toggleSection('description')">
+            <text class="section-title">简介</text>
+            <text class="section-arrow">{{ sectionExpanded.description ? '▼' : '▶' }}</text>
+          </view>
+          <view v-if="sectionExpanded.description" class="section-content">
+            <textarea
+              class="form-textarea"
+              v-model="formData.description"
+              placeholder="请输入简介（选填）"
+              placeholder-class="input-placeholder"
+              :maxlength="500"
+              :adjust-position="false"
+              :show-confirm-bar="false"
+            />
+          </view>
         </view>
 
         <!-- 分类显示（不可编辑） -->
-        <view class="form-item">
-          <text class="form-label">子分类</text>
-          <view class="form-display">
-            <text class="display-text">
-              {{ selectedSubCategory?.name || '未指定分类' }}
-            </text>
+        <view class="collapsible-section">
+          <view class="section-header" @click="toggleSection('category')">
+            <text class="section-title">子分类</text>
+            <text class="section-arrow">{{ sectionExpanded.category ? '▼' : '▶' }}</text>
+          </view>
+          <view v-if="sectionExpanded.category" class="section-content">
+            <view class="form-display">
+              <text class="display-text">
+                {{ selectedSubCategory?.name || '未指定分类' }}
+              </text>
+            </view>
           </view>
         </view>
 
         <!-- 标签 -->
-        <view class="form-item">
-          <text class="form-label">标签</text>
-          <view class="tags-container">
-            <view
-              v-for="tag in selectedTags"
-              :key="tag.id"
-              class="tag-chip"
-              @click="removeTag(tag)"
-            >
-              <text class="tag-text">{{ tag.name }}</text>
-              <text class="tag-close">×</text>
-            </view>
-            <view class="add-tag-btn" @click="selectTags">
-              <text>+ 添加标签</text>
+        <view class="collapsible-section">
+          <view class="section-header" @click="toggleSection('tags')">
+            <text class="section-title">标签</text>
+            <text class="section-arrow">{{ sectionExpanded.tags ? '▼' : '▶' }}</text>
+          </view>
+          <view v-if="sectionExpanded.tags" class="section-content">
+            <view class="tags-container">
+              <view
+                v-for="tag in selectedTags"
+                :key="tag.id"
+                class="tag-chip"
+                @click="removeTag(tag)"
+              >
+                <text class="tag-text">{{ tag.name }}</text>
+                <text class="tag-close">×</text>
+              </view>
+              <view class="add-tag-btn" @click="selectTags">
+                <text>+ 添加标签</text>
+              </view>
             </view>
           </view>
         </view>
@@ -122,7 +150,7 @@
 <script setup>
 import { ref, reactive, computed } from 'vue'
 import { onLoad, onBackPress } from '@dcloudio/uni-app'
-import { contentApi, tagApi } from '@/api'
+import { contentApi, tagApi, categoryApi } from '@/api'
 import { useCategoryStore } from '@/store/category'
 import config from '@/utils/config'
 import { getFullImageUrl } from '@/utils/image'
@@ -142,6 +170,15 @@ const savedSuccessfully = ref(false) // 标记是否成功保存
 // 标签相关
 const showTagSelector = ref(false)
 const selectedTagIds = ref([])
+
+// 折叠状态（默认全部展开，子分类默认折叠）
+const sectionExpanded = reactive({
+  images: true,
+  title: true,
+  description: true,
+  category: false, // 子分类默认折叠
+  tags: true
+})
 
 const formData = reactive({
   name: '',
@@ -246,6 +283,16 @@ const loadContentDetail = async () => {
     formData.subCategoryId = detail.subCategoryId
     formData.mainCategoryId = detail.mainCategoryId
 
+    // 获取子分类信息
+    if (detail.subCategoryId) {
+      try {
+        const subCategoryRes = await categoryApi.getSubCategoryById(detail.subCategoryId)
+        selectedSubCategory.value = subCategoryRes.data || subCategoryRes
+      } catch (error) {
+        console.error('Load sub-category error:', error)
+      }
+    }
+
     // 处理图片
     if (detail.imageUrl) {
       const urls = typeof detail.imageUrl === 'string'
@@ -320,6 +367,11 @@ const handleTagCancel = () => {
 // 移除标签
 const removeTag = (tag) => {
   selectedTags.value = selectedTags.value.filter(t => t.id !== tag.id)
+}
+
+// 切换折叠状态
+const toggleSection = (section) => {
+  sectionExpanded[section] = !sectionExpanded[section]
 }
 
 // 上传图片
@@ -502,9 +554,41 @@ const submit = async () => {
   height: 100vh;
 }
 
-/* 上传区域 */
-.upload-section {
-  padding: 30rpx;
+/* 折叠区域 */
+.collapsible-section {
+  background: #ffffff;
+  margin: 20rpx 30rpx;
+  border-radius: 12rpx;
+  overflow: hidden;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24rpx 28rpx;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.section-header:active {
+  background: #f9f9f9;
+}
+
+.section-title {
+  font-size: 28rpx;
+  color: #333333;
+  font-weight: 500;
+}
+
+.section-arrow {
+  font-size: 24rpx;
+  color: #999999;
+  transition: transform 0.3s ease;
+}
+
+.section-content {
+  padding: 0 28rpx 24rpx 28rpx;
 }
 
 .upload-grid {
@@ -594,34 +678,30 @@ const submit = async () => {
 
 /* 表单区域 */
 .form-section {
-  padding: 20rpx 30rpx;
-}
-
-.form-item {
-  margin-bottom: 40rpx;
-}
-
-.form-label {
-  display: block;
-  font-size: 28rpx;
-  color: #333333;
-  margin-bottom: 20rpx;
-  font-weight: 500;
+  padding: 0;
 }
 
 .form-input,
 .form-textarea {
   width: 100%;
   padding: 24rpx 28rpx;
-  background: #ffffff;
+  background: #f5f5f5;
   border: 1rpx solid rgba(0, 0, 0, 0.08);
   border-radius: 12rpx;
   font-size: 28rpx;
   color: #333333;
+  box-sizing: border-box;
+}
+
+.form-input {
+  height: auto;
+  min-height: 80rpx;
+  line-height: 1.5;
 }
 
 .form-textarea {
-  min-height: 200rpx;
+  min-height: 150rpx;
+  line-height: 1.6;
 }
 
 .input-placeholder {
@@ -633,6 +713,7 @@ const submit = async () => {
   background: #f5f5f5;
   border: 1rpx solid rgba(0, 0, 0, 0.08);
   border-radius: 12rpx;
+  box-sizing: border-box;
 }
 
 .display-text {
