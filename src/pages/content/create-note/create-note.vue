@@ -7,7 +7,11 @@
       confirmText="您有未保存的修改，确定要离开吗？"
     />
 
-    <scroll-view class="content-scroll" scroll-y>
+    <scroll-view
+      class="content-scroll"
+      scroll-y
+      :style="{ height: scrollViewHeight + 'px' }"
+    >
       <!-- 标题 -->
       <view class="collapsible-section">
         <view class="section-header" @click="toggleSection('title')">
@@ -32,7 +36,7 @@
           <text class="section-title">内容</text>
           <text class="section-arrow">{{ sectionExpanded.content ? '▼' : '▶' }}</text>
         </view>
-        <view v-if="sectionExpanded.content" class="section-content">
+        <view v-show="sectionExpanded.content" class="section-content">
           <view class="editor-container">
             <!-- 格式化工具栏（编辑器顶部，展开时始终显示） -->
             <view class="format-toolbar">
@@ -134,6 +138,16 @@
           </view>
         </view>
       </view>
+
+      <!-- 底部按钮（放在滚动区域内） -->
+      <view class="bottom-actions">
+        <view class="action-btn cancel" @click="cancel">
+          <text>取消</text>
+        </view>
+        <view class="action-btn submit" @click="submit">
+          <text>{{ isEdit ? '保存' : '发布' }}</text>
+        </view>
+      </view>
     </scroll-view>
 
     <!-- 标签选择器 -->
@@ -144,21 +158,11 @@
       @confirm="handleTagConfirm"
       @cancel="handleTagCancel"
     />
-
-    <!-- 底部按钮 -->
-    <view class="bottom-actions">
-      <view class="action-btn cancel" @click="cancel">
-        <text>取消</text>
-      </view>
-      <view class="action-btn submit" @click="submit">
-        <text>{{ isEdit ? '保存' : '发布' }}</text>
-      </view>
-    </view>
   </view>
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onUnmounted } from 'vue'
 import { onLoad, onBackPress } from '@dcloudio/uni-app'
 import { contentApi, tagApi, categoryApi } from '@/api'
 import { useCategoryStore } from '@/store/category'
@@ -175,16 +179,21 @@ const selectedTags = ref([])
 const submitting = ref(false)
 const savedSuccessfully = ref(false)
 
+// 键盘相关
+const windowHeight = ref(0)
+const navBarHeight = ref(0) // 导航栏高度（动态计算）
+const scrollViewHeight = ref(0)
+
 // 标签相关
 const showTagSelector = ref(false)
 const selectedTagIds = ref([])
 
-// 折叠状态（默认全部展开，子分类默认折叠）
+// 折叠状态（默认全部展开，子分类默认展开）
 const sectionExpanded = reactive({
   title: true,
   content: true,
   description: true,
-  category: false,
+  category: true,
   tags: true
 })
 
@@ -239,6 +248,46 @@ onLoad((options) => {
     // 保存初始空快照
     saveInitialSnapshot()
   }
+
+  // 获取窗口高度
+  const systemInfo = uni.getSystemInfoSync()
+  windowHeight.value = systemInfo.windowHeight
+
+  // 动态计算导航栏高度（状态栏 + 导航栏内容）
+  const statusBarHeight = systemInfo.statusBarHeight || 0
+  // #ifdef MP-WEIXIN
+  const menuButtonInfo = uni.getMenuButtonBoundingClientRect()
+  navBarHeight.value = (menuButtonInfo.top - statusBarHeight) * 2 + menuButtonInfo.height + statusBarHeight
+  // #endif
+  // #ifndef MP-WEIXIN
+  navBarHeight.value = 44 // 非微信小程序使用默认值
+  // #endif
+
+  // 初始化 scroll-view 高度（窗口高度 - 导航栏高度）
+  scrollViewHeight.value = windowHeight.value - navBarHeight.value
+
+  console.log('[初始化] 窗口高度:', windowHeight.value, '导航栏高度:', navBarHeight.value, 'scroll-view高度:', scrollViewHeight.value)
+
+  // 监听键盘高度变化
+  uni.onKeyboardHeightChange((res) => {
+    console.log('[键盘高度变化]', res.height)
+
+    // 当键盘弹出时，调整 scroll-view 高度 = 窗口高度 - 导航栏高度 - 键盘高度
+    // 这样 scroll-view 的底部刚好到达键盘顶部，按钮被键盘自然遮挡
+    if (res.height > 0) {
+      scrollViewHeight.value = windowHeight.value - navBarHeight.value - res.height
+    } else {
+      // 键盘收起时恢复原高度
+      scrollViewHeight.value = windowHeight.value - navBarHeight.value
+    }
+
+    console.log('[调整后] scroll-view高度:', scrollViewHeight.value)
+  })
+})
+
+// 组件卸载时移除监听器
+onUnmounted(() => {
+  uni.offKeyboardHeightChange()
 })
 
 // App 平台支持物理返回键拦截
@@ -583,16 +632,12 @@ const submit = async () => {
 
 <style scoped>
 .create-note-page {
-  min-height: 100vh;
+  height: 100vh;
   background: #f5f5f5;
-  padding-bottom: calc(120rpx + constant(safe-area-inset-bottom));
-  padding-bottom: calc(120rpx + env(safe-area-inset-bottom));
 }
 
 .content-scroll {
-  height: 100vh;
-  padding-bottom: calc(136rpx + constant(safe-area-inset-bottom));
-  padding-bottom: calc(136rpx + env(safe-area-inset-bottom));
+  /* 高度由内联样式动态控制 */
   box-sizing: border-box;
 }
 
@@ -806,19 +851,15 @@ const submit = async () => {
 
 /* 底部按钮 */
 .bottom-actions {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
   display: flex;
   gap: 20rpx;
   padding: 24rpx 30rpx;
   padding-bottom: calc(24rpx + constant(safe-area-inset-bottom));
   padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
-  background: rgba(255, 255, 255, 0.98);
-  backdrop-filter: blur(20rpx);
+  background: #ffffff;
   border-top: 1rpx solid rgba(0, 0, 0, 0.08);
-  z-index: 100;
+  margin: 20rpx 30rpx;
+  border-radius: 12rpx;
 }
 
 .action-btn {
