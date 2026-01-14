@@ -53,75 +53,53 @@
       refresher-enabled
       :refresher-triggered="refreshing"
     >
-      <!-- 图片瀑布流 -->
-      <view v-if="currentTab === 'image'" class="waterfall-container">
-        <view class="waterfall-column">
-          <view
-            v-for="item in leftColumn"
-            :key="item.id"
-            class="waterfall-item-wrapper"
-          >
-            <!-- 选择框 -->
-            <view v-if="selectionMode" class="checkbox-container" @click.stop="toggleSelection(item)">
-              <view
-                class="checkbox"
-                :class="{ checked: selectedIds.includes(item.id) }"
-              >
-                <text v-if="selectedIds.includes(item.id)" class="checkbox-icon">✓</text>
-              </view>
-            </view>
-
+      <!-- 图片列表（华为图库风格） -->
+      <view v-if="currentTab === 'image'" class="gallery-container">
+        <view
+          v-for="item in contents.filter(c => c.contentType === 'image')"
+          :key="item.id"
+          class="gallery-item"
+        >
+          <!-- 选择框 -->
+          <view v-if="selectionMode" class="checkbox-container" @click.stop="toggleSelection(item)">
             <view
-              class="waterfall-item"
-              :class="{ 'long-pressing': longPressingId === item.id }"
-              @touchstart="onImageTouchStart($event, item)"
-              @touchend="onImageTouchEnd($event, item)"
-              @click="selectionMode ? toggleSelection(item) : goToDetail(item)"
+              class="checkbox"
+              :class="{ checked: selectedIds.includes(item.id) }"
             >
-              <image
-                class="waterfall-image"
-                :src="getFullImageUrl(item.imageUrl)"
-                mode="widthFix"
-                @load="imageLoad"
-              ></image>
-              <view class="waterfall-info">
-                <text class="waterfall-title">{{ item.name }}</text>
-              </view>
+              <text v-if="selectedIds.includes(item.id)" class="checkbox-icon">✓</text>
             </view>
           </view>
-        </view>
 
-        <view class="waterfall-column">
+          <!-- 标题 -->
           <view
-            v-for="item in rightColumn"
-            :key="item.id"
-            class="waterfall-item-wrapper"
+            class="gallery-title-row"
+            :class="{ 'long-pressing': longPressingId === item.id }"
+            @touchstart="onImageTouchStart($event, item)"
+            @touchend="onImageTouchEnd($event, item)"
+            @click="selectionMode ? toggleSelection(item) : goToImageDetail(item, 0)"
           >
-            <!-- 选择框 -->
-            <view v-if="selectionMode" class="checkbox-container" @click.stop="toggleSelection(item)">
-              <view
-                class="checkbox"
-                :class="{ checked: selectedIds.includes(item.id) }"
-              >
-                <text v-if="selectedIds.includes(item.id)" class="checkbox-icon">✓</text>
-              </view>
-            </view>
+            <text class="gallery-title">{{ item.title || '未命名' }}</text>
+          </view>
 
+          <!-- 图片网格 -->
+          <view class="image-grid">
             <view
-              class="waterfall-item"
-              :class="{ 'long-pressing': longPressingId === item.id }"
-              @touchstart="onImageTouchStart($event, item)"
-              @touchend="onImageTouchEnd($event, item)"
-              @click="selectionMode ? toggleSelection(item) : goToDetail(item)"
+              v-for="(url, index) in getDisplayImages(item)"
+              :key="index"
+              class="grid-image-wrapper"
+              @click="goToImageDetail(item, index)"
             >
+              <!-- 普通图片 -->
               <image
-                class="waterfall-image"
-                :src="getFullImageUrl(item.imageUrl)"
-                mode="widthFix"
-                @load="imageLoad"
+                v-if="index < 11"
+                class="grid-image"
+                :src="getFullImageUrl(url)"
+                mode="aspectFill"
               ></image>
-              <view class="waterfall-info">
-                <text class="waterfall-title">{{ item.name }}</text>
+
+              <!-- +更多标识 -->
+              <view v-if="index === 11 && item.imageUrlList && item.imageUrlList.length > 12" class="more-overlay">
+                <text class="more-text">+{{ item.imageUrlList.length - 11 }}</text>
               </view>
             </view>
           </view>
@@ -227,6 +205,15 @@
         <text>删除 ({{ selectedIds.length }})</text>
       </view>
     </view>
+
+    <!-- 图片预览组件 -->
+    <image-preview
+      v-model:visible="previewVisible"
+      :content-list="imageContents"
+      :initial-content-index="previewContentIndex"
+      :initial-image-index="previewImageIndex"
+      @close="onPreviewClose"
+    />
   </view>
 </template>
 
@@ -237,6 +224,7 @@ import { contentApi } from '@/api'
 import { useCategoryStore } from '@/store/category'
 import { getFullImageUrl } from '@/utils/image'
 import CustomNavBar from '@/components/custom-nav-bar/custom-nav-bar.vue'
+import ImagePreview from '@/components/image-preview/image-preview.vue'
 
 // 数据
 const subCategoryId = ref('')
@@ -261,22 +249,27 @@ const longPressTriggered = ref(false) // 本次触摸是否触发了长按
 // 标签展开/收起状态
 const expandedTags = ref(new Set())
 
+// 图片预览相关
+const previewVisible = ref(false)
+const previewContentIndex = ref(0)
+const previewImageIndex = ref(0)
+
 // Tab配置
 const tabs = [
   { type: 'image', label: '图片' },
   { type: 'note', label: '文本' }
 ]
 
-// 瀑布流列数据
-const leftColumn = ref([])
-const rightColumn = ref([])
-let leftHeight = 0
-let rightHeight = 0
 let isFirstLoad = true
 
 // 文本内容
 const noteContents = computed(() => {
   return contents.value.filter(item => item.contentType === 'note')
+})
+
+// 图片内容
+const imageContents = computed(() => {
+  return contents.value.filter(item => item.contentType === 'image')
 })
 
 // 切换标签展开/收起
@@ -361,12 +354,6 @@ const loadContents = async (refresh = false) => {
     currentPage.value = 1
     hasMore.value = true
     refreshing.value = true
-    if (currentTab.value === 'image') {
-      leftColumn.value = []
-      rightColumn.value = []
-      leftHeight = 0
-      rightHeight = 0
-    }
   }
 
   if (!hasMore.value && !refresh) return
@@ -398,11 +385,6 @@ const loadContents = async (refresh = false) => {
       contents.value = [...contents.value, ...validList]
     }
 
-    // 图片类型需要分配到瀑布流列
-    if (currentTab.value === 'image') {
-      distributeToWaterfall(validList, refresh)
-    }
-
     hasMore.value = list.length >= 20
   } catch (error) {
     console.error('Load contents error:', error)
@@ -416,31 +398,40 @@ const loadContents = async (refresh = false) => {
   }
 }
 
-// 分配图片到瀑布流
-const distributeToWaterfall = (list, refresh) => {
-  if (refresh) {
-    leftColumn.value = []
-    rightColumn.value = []
-    leftHeight = 0
-    rightHeight = 0
+// 获取要显示的图片列表（最多12张：前11张 + 更多标识位）
+const getDisplayImages = (item) => {
+  if (!item.imageUrlList || item.imageUrlList.length === 0) {
+    return []
   }
 
-  list.forEach(item => {
-    // 简单分配：轮流放到左右列（实际应该根据图片高度）
-    if (leftHeight <= rightHeight) {
-      leftColumn.value.push(item)
-      leftHeight += 1
-    } else {
-      rightColumn.value.push(item)
-      rightHeight += 1
-    }
-  })
+  // 如果图片数量 <= 11张，全部显示
+  if (item.imageUrlList.length <= 11) {
+    return item.imageUrlList
+  }
+
+  // 如果超过11张，显示前11张 + 一个占位（用于显示"更多"）
+  return item.imageUrlList.slice(0, 12)
 }
 
-// 图片加载完成
-const imageLoad = (e) => {
-  // 可以在这里根据实际图片高度调整布局
-  console.log('Image loaded', e)
+// 跳转到图片详情/预览
+const goToImageDetail = (item, imageIndex) => {
+  if (selectionMode.value) {
+    toggleSelection(item)
+    return
+  }
+
+  // 打开图片预览
+  const contentIndex = imageContents.value.findIndex(c => c.id === item.id)
+  if (contentIndex !== -1) {
+    previewContentIndex.value = contentIndex
+    previewImageIndex.value = imageIndex
+    previewVisible.value = true
+  }
+}
+
+// 关闭预览
+const onPreviewClose = () => {
+  previewVisible.value = false
 }
 
 // 切换Tab
@@ -915,58 +906,86 @@ const batchDelete = async () => {
   flex: 1;
 }
 
-/* 瀑布流 */
-.waterfall-container {
-  display: flex;
-  padding: 20rpx 20rpx 0;
-  gap: 20rpx;
+/* 华为图库风格 */
+.gallery-container {
+  padding: 10rpx 30rpx 0;
 }
 
-.waterfall-column {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.waterfall-item-wrapper {
+.gallery-item {
   position: relative;
-  margin-bottom: 20rpx;
+  margin-bottom: 40rpx;
 }
 
-.waterfall-item {
-  border-radius: 16rpx;
-  overflow: hidden;
-  background: #ffffff;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
-  transition: transform 0.3s ease;
+.gallery-title-row {
+  padding: 20rpx 0;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
 }
 
-.waterfall-item:active {
-  transform: scale(0.98);
+.gallery-title-row:active {
+  opacity: 0.7;
 }
 
 /* 长按缩放动画 */
-.waterfall-item.long-pressing {
-  transform: scale(0.95);
-  transition: transform 0.3s ease;
+.gallery-title-row.long-pressing {
+  transform: scale(0.98);
+  transition: transform 0.2s ease;
 }
 
-.waterfall-image {
-  width: 100%;
-  display: block;
-}
-
-.waterfall-info {
-  padding: 20rpx;
-}
-
-.waterfall-title {
-  display: block;
-  font-size: 26rpx;
+.gallery-title {
+  font-size: 32rpx;
+  font-weight: 500;
   color: #333333;
+  line-height: 1.4;
+}
+
+/* 图片网格 */
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4rpx;
+}
+
+.grid-image-wrapper {
+  position: relative;
+  width: 100%;
+  padding-bottom: 100%; /* 正方形 */
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  background: #f0f0f0;
+  cursor: pointer;
+}
+
+.grid-image-wrapper:active {
+  opacity: 0.8;
+}
+
+.grid-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* +更多遮罩 */
+.more-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.more-text {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #ffffff;
 }
 
 /* 文本列表 */

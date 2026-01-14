@@ -290,15 +290,11 @@ const loadContentDetail = async () => {
       }
     }
 
-    // 处理图片
-    if (detail.imageUrl) {
-      const urls = typeof detail.imageUrl === 'string'
-        ? detail.imageUrl.split(',').filter(url => url.trim())
-        : Array.isArray(detail.imageUrl)
-          ? detail.imageUrl
-          : [detail.imageUrl]
-
-      imageList.value = urls.map(url => ({ url, uploaded: true }))
+    // 处理图片（新字段：imageUrlList 是字符串数组）
+    if (detail.imageUrlList && Array.isArray(detail.imageUrlList)) {
+      imageList.value = detail.imageUrlList
+        .filter(url => url && url.trim())
+        .map(url => ({ url: url.trim(), uploaded: true }))
     }
 
     // 处理标签
@@ -513,7 +509,7 @@ const submit = async () => {
       subCategoryId: formData.subCategoryId,
       mainCategoryId: formData.mainCategoryId,
       contentType: 'image',
-      imageUrl: imageUrls.join(','),
+      imageUrlList: imageUrls, // 新字段：字符串数组
       tagIdList: selectedTags.value.map(tag => tag.id)
     }
 

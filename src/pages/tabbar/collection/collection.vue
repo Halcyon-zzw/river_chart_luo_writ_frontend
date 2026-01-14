@@ -26,7 +26,7 @@
           <view v-if="item.contentType === 'image'" class="image-card">
             <image
               class="content-image"
-              :src="getFullImageUrl(item.imageUrl)"
+              :src="getFullImageUrl(item.imageUrlList && item.imageUrlList[0] ? item.imageUrlList[0] : '')"
               mode="aspectFill"
             ></image>
             <view class="image-overlay">

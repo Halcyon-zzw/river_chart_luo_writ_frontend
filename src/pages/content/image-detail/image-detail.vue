@@ -1,7 +1,7 @@
 <template>
   <view class="image-detail-page">
     <!-- 自定义导航栏 -->
-    <custom-nav-bar title="图片详情" />
+    <custom-nav-bar :title="contentDetail.title || contentDetail.name || '图片详情'" />
 
     <scroll-view class="detail-scroll" scroll-y>
       <!-- 内容信息区 -->
@@ -37,10 +37,10 @@
       </view>
 
       <!-- 图片展示区 -->
-      <view class="image-container" v-if="firstImage" @click="previewImage">
+      <view class="image-container" v-if="imageList.length > 0" @click="previewImage">
         <image
           class="detail-image"
-          :src="getFullImageUrl(firstImage)"
+          :src="getFullImageUrl(imageList[0])"
           mode="aspectFit"
         ></image>
       </view>
@@ -156,7 +156,7 @@ const userStore = useUserStore()
 // 数据
 const contentId = ref('')
 const contentDetail = ref({})
-const firstImage = ref('')
+const imageList = ref([]) // 存储所有图片URL
 const tagDeleteMode = ref(false)
 const showMoreActions = ref(false)
 const showDetailModal = ref(false)
@@ -192,16 +192,9 @@ const loadContentDetail = async () => {
     const res = await contentApi.getContentById(contentId.value)
     contentDetail.value = res.data || res
 
-    // 处理图片URL - 只取第一张
-    if (contentDetail.value.imageUrl) {
-      if (typeof contentDetail.value.imageUrl === 'string') {
-        const urls = contentDetail.value.imageUrl.split(',').filter(url => url.trim())
-        firstImage.value = urls[0] || ''
-      } else if (Array.isArray(contentDetail.value.imageUrl)) {
-        firstImage.value = contentDetail.value.imageUrl[0] || ''
-      } else {
-        firstImage.value = contentDetail.value.imageUrl
-      }
+    // 处理图片URL列表（新字段：imageUrlList 是字符串数组）
+    if (contentDetail.value.imageUrlList && Array.isArray(contentDetail.value.imageUrlList)) {
+      imageList.value = contentDetail.value.imageUrlList.filter(url => url && url.trim())
     }
 
     // 创建浏览记录
@@ -230,9 +223,9 @@ const createBrowseHistory = async () => {
 
 // 预览图片
 const previewImage = () => {
-  if (!firstImage.value) return
+  if (imageList.value.length === 0) return
   uni.previewImage({
-    urls: [getFullImageUrl(firstImage.value)],
+    urls: imageList.value.map(url => getFullImageUrl(url)),
     current: 0
   })
 }
@@ -381,13 +374,13 @@ const hideDetailInfo = () => {
   showDetailModal.value = false
 }
 
-// 下载图片
+// 下载图片（下载第一张）
 const downloadImage = () => {
   hideMoreMenu()
 
-  if (!firstImage.value) return
+  if (imageList.value.length === 0) return
 
-  const imageUrl = getFullImageUrl(firstImage.value)
+  const imageUrl = getFullImageUrl(imageList.value[0])
 
   uni.downloadFile({
     url: imageUrl,

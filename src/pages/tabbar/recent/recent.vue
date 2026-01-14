@@ -70,79 +70,57 @@
       refresher-enabled
       :refresher-triggered="refreshing"
     >
-      <!-- 图片瀑布流 -->
-      <view v-if="currentTab === 'image'" class="waterfall-container">
-        <view class="waterfall-column">
-          <view
-            v-for="item in leftColumn"
-            :key="item.id"
-            class="waterfall-item-wrapper"
-          >
-            <!-- 选择框 -->
-            <view v-if="selectionMode" class="checkbox-container" @click.stop="toggleSelection(item)">
-              <view
-                class="checkbox"
-                :class="{ checked: selectedIds.includes(item.id) }"
-              >
-                <text v-if="selectedIds.includes(item.id)" class="checkbox-icon">✓</text>
-              </view>
-            </view>
-
+      <!-- 图片列表（华为图库风格） -->
+      <view v-if="currentTab === 'image'" class="gallery-container">
+        <view
+          v-for="item in historyList.filter(h => h.contentDTO?.contentType === 'image')"
+          :key="item.id"
+          class="gallery-item"
+        >
+          <!-- 选择框 -->
+          <view v-if="selectionMode" class="checkbox-container" @click.stop="toggleSelection(item)">
             <view
-              class="waterfall-item"
-              :class="{ 'long-pressing': longPressingId === item.id }"
-              @touchstart="onImageTouchStart($event, item)"
-              @touchmove="onImageTouchMove($event, item)"
-              @touchend="onImageTouchEnd($event, item)"
-              @click="selectionMode ? toggleSelection(item) : goToDetail(item)"
+              class="checkbox"
+              :class="{ checked: selectedIds.includes(item.id) }"
             >
-              <image
-                class="waterfall-image"
-                :src="getFullImageUrl(item.contentDTO?.imageUrl)"
-                mode="widthFix"
-                @load="imageLoad($event, 'left')"
-              ></image>
-              <view class="waterfall-info">
-                <text class="waterfall-title">{{ item.contentDTO?.title || '未命名' }}</text>
-                <text class="waterfall-time">{{ formatTime(item.browseTime) }}</text>
-              </view>
+              <text v-if="selectedIds.includes(item.id)" class="checkbox-icon">✓</text>
             </view>
           </view>
-        </view>
 
-        <view class="waterfall-column">
+          <!-- 标题和浏览时间 -->
           <view
-            v-for="item in rightColumn"
-            :key="item.id"
-            class="waterfall-item-wrapper"
+            class="gallery-title-row"
+            :class="{ 'long-pressing': longPressingId === item.id }"
+            @touchstart="onImageTouchStart($event, item)"
+            @touchmove="onImageTouchMove($event, item)"
+            @touchend="onImageTouchEnd($event, item)"
+            @click="selectionMode ? toggleSelection(item) : goToImageDetail(item, 0)"
           >
-            <!-- 选择框 -->
-            <view v-if="selectionMode" class="checkbox-container" @click.stop="toggleSelection(item)">
-              <view
-                class="checkbox"
-                :class="{ checked: selectedIds.includes(item.id) }"
-              >
-                <text v-if="selectedIds.includes(item.id)" class="checkbox-icon">✓</text>
-              </view>
+            <view class="title-time-wrapper">
+              <text class="gallery-title">{{ item.contentDTO?.title || '未命名' }}</text>
+              <text class="gallery-time">{{ formatTime(item.browseTime) }}</text>
             </view>
+          </view>
 
+          <!-- 图片网格 -->
+          <view class="image-grid">
             <view
-              class="waterfall-item"
-              :class="{ 'long-pressing': longPressingId === item.id }"
-              @touchstart="onImageTouchStart($event, item)"
-              @touchmove="onImageTouchMove($event, item)"
-              @touchend="onImageTouchEnd($event, item)"
-              @click="selectionMode ? toggleSelection(item) : goToDetail(item)"
+              v-for="(url, index) in getDisplayImages(item.contentDTO)"
+              :key="index"
+              class="grid-image-wrapper"
+              @click="goToImageDetail(item, index)"
             >
+              <!-- 普通图片 -->
               <image
-                class="waterfall-image"
-                :src="getFullImageUrl(item.contentDTO?.imageUrl)"
-                mode="widthFix"
-                @load="imageLoad($event, 'right')"
+                v-if="index < 11"
+                class="grid-image"
+                :src="getFullImageUrl(url)"
+                mode="aspectFill"
               ></image>
-              <view class="waterfall-info">
-                <text class="waterfall-title">{{ item.contentDTO?.title || '未命名' }}</text>
-                <text class="waterfall-time">{{ formatTime(item.browseTime) }}</text>
+
+              <!-- +更多标识 -->
+              <view v-if="index === 11 && item.contentDTO?.imageUrlList && item.contentDTO.imageUrlList.length > 12" class="more-overlay">
+                <text class="more-text">+{{ item.contentDTO.imageUrlList.length - 11 }}</text>
               </view>
             </view>
           </view>
@@ -211,6 +189,15 @@
         <text>删除 ({{ selectedIds.length }})</text>
       </view>
     </view>
+
+    <!-- 图片预览组件 -->
+    <image-preview
+      v-model:visible="previewVisible"
+      :content-list="imageContents"
+      :initial-content-index="previewContentIndex"
+      :initial-image-index="previewImageIndex"
+      @close="onPreviewClose"
+    />
   </view>
 </template>
 
@@ -220,6 +207,7 @@ import { onShow } from '@dcloudio/uni-app'
 import { browseHistoryApi } from '@/api'
 import { useUserStore } from '@/store/user'
 import { getFullImageUrl } from '@/utils/image'
+import ImagePreview from '@/components/image-preview/image-preview.vue'
 
 const userStore = useUserStore()
 
@@ -234,15 +222,14 @@ const totalCount = ref(0)
 const searchKeyword = ref('')
 const selectedTimeRange = ref({ value: 'all', label: '全部' })
 
-// 瀑布流相关
-const leftColumn = ref([])
-const rightColumn = ref([])
-const leftHeight = ref(0)
-const rightHeight = ref(0)
-
 // 批量操作
 const selectionMode = ref(false)
 const selectedIds = ref([])
+
+// 图片预览相关
+const previewVisible = ref(false)
+const previewContentIndex = ref(0)
+const previewImageIndex = ref(0)
 
 // 长按检测
 let imageTouchStartTime = 0
@@ -273,6 +260,13 @@ const timeRanges = [
 
 // 计算属性
 const userId = computed(() => userStore.userId)
+
+// 图片内容（提取所有图片类型的历史记录的contentDTO）
+const imageContents = computed(() => {
+  return historyList.value
+    .filter(h => h.contentDTO?.contentType === 'image')
+    .map(h => h.contentDTO)
+})
 
 // 页面显示时刷新
 onShow(() => {
@@ -326,32 +320,8 @@ const loadHistoryList = async (refresh = false) => {
 
     if (refresh) {
       historyList.value = validList
-      // 图片类型需要重新分配瀑布流
-      if (currentTab.value === 'image') {
-        leftColumn.value = []
-        rightColumn.value = []
-        leftHeight.value = 0
-        rightHeight.value = 0
-        validList.forEach(item => {
-          if (leftHeight.value <= rightHeight.value) {
-            leftColumn.value.push(item)
-          } else {
-            rightColumn.value.push(item)
-          }
-        })
-      }
     } else {
       historyList.value = [...historyList.value, ...validList]
-      // 图片类型追加到瀑布流
-      if (currentTab.value === 'image') {
-        validList.forEach(item => {
-          if (leftHeight.value <= rightHeight.value) {
-            leftColumn.value.push(item)
-          } else {
-            rightColumn.value.push(item)
-          }
-        })
-      }
     }
 
     // 更新总数
@@ -370,14 +340,42 @@ const loadHistoryList = async (refresh = false) => {
   }
 }
 
-// 图片加载完成 - 更新瀑布流高度
-const imageLoad = (e, column) => {
-  const { height } = e.detail
-  if (column === 'left') {
-    leftHeight.value += height
-  } else {
-    rightHeight.value += height
+// 获取要显示的图片列表（最多12张：前11张 + 更多标识位）
+const getDisplayImages = (contentDTO) => {
+  if (!contentDTO || !contentDTO.imageUrlList || contentDTO.imageUrlList.length === 0) {
+    return []
   }
+
+  // 如果图片数量 <= 11张，全部显示
+  if (contentDTO.imageUrlList.length <= 11) {
+    return contentDTO.imageUrlList
+  }
+
+  // 如果超过11张，显示前11张 + 一个占位（用于显示"更多"）
+  return contentDTO.imageUrlList.slice(0, 12)
+}
+
+// 跳转到图片详情/预览
+const goToImageDetail = (historyItem, imageIndex) => {
+  if (selectionMode.value) {
+    toggleSelection(historyItem)
+    return
+  }
+
+  // 打开图片预览
+  if (historyItem.contentDTO) {
+    const contentIndex = imageContents.value.findIndex(c => c.id === historyItem.contentDTO.id)
+    if (contentIndex !== -1) {
+      previewContentIndex.value = contentIndex
+      previewImageIndex.value = imageIndex
+      previewVisible.value = true
+    }
+  }
+}
+
+// 关闭预览
+const onPreviewClose = () => {
+  previewVisible.value = false
 }
 
 // 下拉刷新
@@ -856,64 +854,98 @@ const formatTime = (time) => {
   background: #f5f5f5;
 }
 
-/* 图片瀑布流 */
-.waterfall-container {
-  display: flex;
-  padding: 20rpx 20rpx 0;
-  gap: 20rpx;
+/* 华为图库风格 */
+.gallery-container {
+  padding: 10rpx 30rpx 0;
 }
 
-.waterfall-column {
-  flex: 1;
+.gallery-item {
+  position: relative;
+  margin-bottom: 40rpx;
+}
+
+.gallery-title-row {
+  padding: 20rpx 0;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.gallery-title-row:active {
+  opacity: 0.7;
+}
+
+/* 长按缩放动画 */
+.gallery-title-row.long-pressing {
+  transform: scale(0.98);
+  transition: transform 0.2s ease;
+}
+
+.title-time-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 20rpx;
+  gap: 8rpx;
+  flex: 1;
 }
 
-.waterfall-item-wrapper {
-  position: relative;
-}
-
-.waterfall-item {
-  background: #ffffff;
-  border-radius: 16rpx;
-  overflow: hidden;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.08);
-}
-
-.waterfall-item:active {
-  opacity: 0.9;
-}
-
-.waterfall-item.long-pressing {
-  transform: scale(0.95);
-  transition: transform 0.3s ease;
-}
-
-.waterfall-image {
-  width: 100%;
-  display: block;
-}
-
-.waterfall-info {
-  padding: 20rpx;
-}
-
-.waterfall-title {
-  display: block;
-  font-size: 28rpx;
-  color: #333333;
+.gallery-title {
+  font-size: 32rpx;
   font-weight: 500;
-  margin-bottom: 12rpx;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  color: #333333;
+  line-height: 1.4;
 }
 
-.waterfall-time {
-  display: block;
-  font-size: 22rpx;
+.gallery-time {
+  font-size: 24rpx;
   color: #999999;
+}
+
+/* 图片网格 */
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4rpx;
+}
+
+.grid-image-wrapper {
+  position: relative;
+  width: 100%;
+  padding-bottom: 100%; /* 正方形 */
+  overflow: hidden;
+  background: #f0f0f0;
+  cursor: pointer;
+}
+
+.grid-image-wrapper:active {
+  opacity: 0.8;
+}
+
+.grid-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* +更多遮罩 */
+.more-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.more-text {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #ffffff;
 }
 
 /* 笔记列表 */
