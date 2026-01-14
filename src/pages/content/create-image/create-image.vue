@@ -58,7 +58,7 @@
               v-model="formData.name"
               placeholder="请输入标题（必填）"
               placeholder-class="input-placeholder"
-              :adjust-position="false"
+              :adjust-position="true"
             />
           </view>
         </view>
@@ -76,7 +76,7 @@
               placeholder="请输入简介（选填）"
               placeholder-class="input-placeholder"
               :maxlength="500"
-              :adjust-position="false"
+              :adjust-position="true"
               :show-confirm-bar="false"
             />
           </view>
@@ -121,9 +121,6 @@
           </view>
         </view>
       </view>
-
-      <!-- 底部占位 -->
-      <view class="bottom-placeholder"></view>
     </scroll-view>
 
     <!-- 标签选择器 -->
@@ -305,8 +302,19 @@ const loadContentDetail = async () => {
     }
 
     // 处理标签
-    if (detail.tagDTOList) {
+    if (detail.tagDTOList && detail.tagDTOList.length > 0) {
       selectedTags.value = detail.tagDTOList
+    } else {
+      // 如果详情接口没有返回标签，尝试单独获取
+      try {
+        const tagsRes = await contentApi.getContentTags(contentId.value)
+        if (tagsRes.data && Array.isArray(tagsRes.data)) {
+          selectedTags.value = tagsRes.data
+        }
+      } catch (error) {
+        console.error('Load content tags error:', error)
+        // 标签加载失败不影响主流程
+      }
     }
 
     // 保存初始快照
@@ -552,6 +560,10 @@ const submit = async () => {
 
 .content-scroll {
   height: 100vh;
+  /* 底部留出按钮栏的空间：按钮高度88rpx + 上下padding 48rpx + safe-area */
+  padding-bottom: calc(136rpx + constant(safe-area-inset-bottom));
+  padding-bottom: calc(136rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
 }
 
 /* 折叠区域 */
@@ -709,6 +721,7 @@ const submit = async () => {
 }
 
 .form-display {
+  width: 100%;
   padding: 24rpx 28rpx;
   background: #f5f5f5;
   border: 1rpx solid rgba(0, 0, 0, 0.08);
@@ -719,6 +732,8 @@ const submit = async () => {
 .display-text {
   font-size: 28rpx;
   color: #666666;
+  word-break: break-word;
+  white-space: normal;
 }
 
 /* 标签容器 */
@@ -726,6 +741,7 @@ const submit = async () => {
   display: flex;
   flex-wrap: wrap;
   gap: 16rpx;
+  width: 100%;
 }
 
 .tag-chip {
@@ -736,11 +752,14 @@ const submit = async () => {
   background: rgba(0, 196, 179, 0.15);
   border: 1rpx solid rgba(0, 196, 179, 0.3);
   border-radius: 8rpx;
+  max-width: 100%;
 }
 
 .tag-text {
   font-size: 24rpx;
   color: #00c4b3;
+  word-break: break-word;
+  white-space: normal;
 }
 
 .tag-close {
@@ -756,11 +775,6 @@ const submit = async () => {
   border-radius: 8rpx;
   font-size: 24rpx;
   color: #999999;
-}
-
-/* 底部占位 */
-.bottom-placeholder {
-  height: 160rpx;
 }
 
 /* 底部按钮 */
