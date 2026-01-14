@@ -196,12 +196,46 @@ const onSwiperChange = (e) => {
 }
 
 const onSwiperTransition = (e) => {
-  // 可以添加过渡动画处理
+  const { dx } = e.detail
+  const now = Date.now()
+
+  // 防抖：2秒内只显示一次提示
+  if (now - lastBoundaryToastTime.value < 2000) {
+    return
+  }
+
+  // 阈值：滑动距离超过20px才触发
+  if (Math.abs(dx) < 20) {
+    return
+  }
+
+  // 在第一张图片时尝试左滑（查看上一张）
+  if (currentIndex.value === 0 && dx < 0) {
+    uni.showToast({
+      title: '已经是第一张了',
+      icon: 'none',
+      duration: 1500
+    })
+    lastBoundaryToastTime.value = now
+  }
+
+  // 在最后一张图片时尝试右滑（查看下一张）
+  if (currentIndex.value === allImages.value.length - 1 && dx > 0) {
+    uni.showToast({
+      title: '已经是最后一张了',
+      icon: 'none',
+      duration: 1500
+    })
+    lastBoundaryToastTime.value = now
+  }
 }
 
 const onAnimationFinish = (e) => {
   // 动画完成处理
 }
+
+// 边界滑动提示防抖
+const lastBoundaryToastTime = ref(0)
 
 // 双指缩放相关
 const touchPoints = ref([])
