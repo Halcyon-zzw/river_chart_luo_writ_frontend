@@ -7,99 +7,133 @@
       confirmText="您有未保存的修改，确定要离开吗？"
     />
 
-    <!-- 表单区域 -->
     <scroll-view class="content-scroll" scroll-y>
-      <!-- 标题输入 -->
-      <view class="title-section">
-        <input
-          class="title-input"
-          v-model="formData.name"
-          placeholder="请输入标题"
-          placeholder-class="input-placeholder"
-          :maxlength="100"
-          :adjust-position="false"
-          @input="hasModified = true"
-          @focus="onOtherInputFocus"
-        />
+      <!-- 标题 -->
+      <view class="collapsible-section">
+        <view class="section-header" @click="toggleSection('title')">
+          <text class="section-title">标题</text>
+          <text class="section-arrow">{{ sectionExpanded.title ? '▼' : '▶' }}</text>
+        </view>
+        <view v-if="sectionExpanded.title" class="section-content">
+          <input
+            class="form-input"
+            v-model="formData.name"
+            placeholder="请输入标题（必填）"
+            placeholder-class="input-placeholder"
+            :maxlength="100"
+            :adjust-position="true"
+          />
+        </view>
       </view>
 
-      <!-- 富文本编辑器 -->
-      <view class="editor-section">
-        <editor
-          id="editor"
-          class="editor"
-          :placeholder="'开始输入内容...'"
-          @ready="onEditorReady"
-          @input="onEditorInput"
-          @focus="onEditorFocus"
-          @blur="onEditorBlur"
-        ></editor>
-      </view>
+      <!-- 内容（富文本编辑器） -->
+      <view class="collapsible-section">
+        <view class="section-header" @click="toggleSection('content')">
+          <text class="section-title">内容</text>
+          <text class="section-arrow">{{ sectionExpanded.content ? '▼' : '▶' }}</text>
+        </view>
+        <view v-if="sectionExpanded.content" class="section-content">
+          <view class="editor-container">
+            <!-- 格式化工具栏（编辑器顶部，展开时始终显示） -->
+            <view class="format-toolbar">
+              <scroll-view class="toolbar-scroll" scroll-x>
+                <view class="toolbar-content">
+                  <view class="tool-btn" @click="format('bold')">
+                    <text class="tool-icon">B</text>
+                  </view>
+                  <view class="tool-btn" @click="format('italic')">
+                    <text class="tool-icon italic">I</text>
+                  </view>
+                  <view class="tool-btn" @click="format('underline')">
+                    <text class="tool-icon underline">U</text>
+                  </view>
+                  <view class="tool-divider"></view>
+                  <view class="tool-btn" @click="format('header', { name: 'H1', value: 'H1' })">
+                    <text class="tool-text">H1</text>
+                  </view>
+                  <view class="tool-btn" @click="format('header', { name: 'H2', value: 'H2' })">
+                    <text class="tool-text">H2</text>
+                  </view>
+                  <view class="tool-divider"></view>
+                  <view class="tool-btn" @click="insertImage">
+                    <text class="tool-icon">🖼</text>
+                  </view>
+                  <view class="tool-btn" @click="insertDivider">
+                    <text class="tool-icon">━</text>
+                  </view>
+                </view>
+              </scroll-view>
+            </view>
 
-      <!-- 其他表单项 -->
-      <view class="form-section">
-        <!-- 描述 -->
-        <view class="collapsible-section">
-          <view class="section-header" @click="toggleSection('description')">
-            <text class="section-title">简介</text>
-            <text class="section-arrow">{{ sectionExpanded.description ? '▼' : '▶' }}</text>
-          </view>
-          <view v-if="sectionExpanded.description" class="section-content">
-            <textarea
-              class="form-textarea"
-              v-model="formData.description"
-              placeholder="请输入简介（可选）"
-              placeholder-class="input-placeholder"
-              :maxlength="200"
-              :adjust-position="false"
-              @input="hasModified = true"
-              @focus="onOtherInputFocus"
-            />
+            <!-- 富文本编辑器 -->
+            <editor
+              id="editor"
+              class="editor"
+              :placeholder="'开始输入内容...'"
+              @ready="onEditorReady"
+              @input="onEditorInput"
+            ></editor>
           </view>
         </view>
+      </view>
 
-        <!-- 分类显示（不可编辑） -->
-        <view class="collapsible-section">
-          <view class="section-header" @click="toggleSection('category')">
-            <text class="section-title">子分类</text>
-            <text class="section-arrow">{{ sectionExpanded.category ? '▼' : '▶' }}</text>
+      <!-- 简介 -->
+      <view class="collapsible-section">
+        <view class="section-header" @click="toggleSection('description')">
+          <text class="section-title">简介</text>
+          <text class="section-arrow">{{ sectionExpanded.description ? '▼' : '▶' }}</text>
+        </view>
+        <view v-if="sectionExpanded.description" class="section-content">
+          <textarea
+            class="form-textarea"
+            v-model="formData.description"
+            placeholder="请输入简介（选填）"
+            placeholder-class="input-placeholder"
+            :maxlength="500"
+            :adjust-position="true"
+            :show-confirm-bar="false"
+          />
+        </view>
+      </view>
+
+      <!-- 分类显示（不可编辑） -->
+      <view class="collapsible-section">
+        <view class="section-header" @click="toggleSection('category')">
+          <text class="section-title">子分类</text>
+          <text class="section-arrow">{{ sectionExpanded.category ? '▼' : '▶' }}</text>
+        </view>
+        <view v-if="sectionExpanded.category" class="section-content">
+          <view class="form-display">
+            <text class="display-text">
+              {{ selectedSubCategory?.name || '未指定分类' }}
+            </text>
           </view>
-          <view v-if="sectionExpanded.category" class="section-content">
-            <view class="form-display">
-              <text class="display-text">
-                {{ selectedSubCategory?.name || '未指定分类' }}
-              </text>
+        </view>
+      </view>
+
+      <!-- 标签 -->
+      <view class="collapsible-section">
+        <view class="section-header" @click="toggleSection('tags')">
+          <text class="section-title">标签</text>
+          <text class="section-arrow">{{ sectionExpanded.tags ? '▼' : '▶' }}</text>
+        </view>
+        <view v-if="sectionExpanded.tags" class="section-content">
+          <view class="tags-container">
+            <view
+              v-for="tag in selectedTags"
+              :key="tag.id"
+              class="tag-chip"
+              @click="removeTag(tag)"
+            >
+              <text class="tag-text">{{ tag.name }}</text>
+              <text class="tag-close">×</text>
+            </view>
+            <view class="add-tag-btn" @click="selectTags">
+              <text>+ 添加标签</text>
             </view>
           </view>
         </view>
-
-        <!-- 标签 -->
-        <view class="collapsible-section">
-          <view class="section-header" @click="toggleSection('tags')">
-            <text class="section-title">标签</text>
-            <text class="section-arrow">{{ sectionExpanded.tags ? '▼' : '▶' }}</text>
-          </view>
-          <view v-if="sectionExpanded.tags" class="section-content">
-            <view class="tags-container">
-              <view
-                v-for="tag in selectedTags"
-                :key="tag.id"
-                class="tag-chip"
-                @click="removeTag(tag)"
-              >
-                <text class="tag-text">{{ tag.name }}</text>
-                <text class="tag-close">×</text>
-              </view>
-              <view class="add-tag-btn" @click="selectTags">
-                <text>+ 添加标签</text>
-              </view>
-            </view>
-          </view>
-        </view>
       </view>
-
-      <!-- 底部占位（为固定按钮留空间） -->
-      <view class="bottom-placeholder"></view>
     </scroll-view>
 
     <!-- 标签选择器 -->
@@ -111,43 +145,8 @@
       @cancel="handleTagCancel"
     />
 
-    <!-- 格式化工具栏（跟随键盘，仅在编辑器聚焦且键盘弹起时显示） -->
-    <view
-      v-if="showFormatToolbar && keyboardHeight > 0"
-      class="format-toolbar"
-      :style="{ bottom: keyboardHeight + 'px' }"
-    >
-      <scroll-view class="toolbar-scroll" scroll-x>
-        <view class="toolbar-content">
-          <view class="tool-btn" @click="format('bold')">
-            <text class="tool-icon">B</text>
-          </view>
-          <view class="tool-btn" @click="format('italic')">
-            <text class="tool-icon italic">I</text>
-          </view>
-          <view class="tool-btn" @click="format('underline')">
-            <text class="tool-icon underline">U</text>
-          </view>
-          <view class="tool-divider"></view>
-          <view class="tool-btn" @click="format('header', { name: 'H1', value: 'H1' })">
-            <text class="tool-text">H1</text>
-          </view>
-          <view class="tool-btn" @click="format('header', { name: 'H2', value: 'H2' })">
-            <text class="tool-text">H2</text>
-          </view>
-          <view class="tool-divider"></view>
-          <view class="tool-btn" @click="insertImage">
-            <text class="tool-icon">🖼</text>
-          </view>
-          <view class="tool-btn" @click="insertDivider">
-            <text class="tool-icon">━</text>
-          </view>
-        </view>
-      </scroll-view>
-    </view>
-
-    <!-- 操作按钮（固定在底部） -->
-    <view class="action-toolbar">
+    <!-- 底部按钮 -->
+    <view class="bottom-actions">
       <view class="action-btn cancel" @click="cancel">
         <text>取消</text>
       </view>
@@ -159,9 +158,9 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { onLoad, onBackPress } from '@dcloudio/uni-app'
-import { contentApi, tagApi } from '@/api'
+import { contentApi, tagApi, categoryApi } from '@/api'
 import { useCategoryStore } from '@/store/category'
 import config from '@/utils/config'
 import TagSelector from '@/components/tag-selector/tag-selector.vue'
@@ -173,23 +172,19 @@ const isEdit = ref(false)
 const editorCtx = ref(null)
 const selectedSubCategory = ref(null)
 const selectedTags = ref([])
-const hasModified = ref(false)
 const submitting = ref(false)
-const savedSuccessfully = ref(false) // 标记是否成功保存
-
-// 格式化工具栏显示控制
-const showFormatToolbar = ref(false)
-const keyboardHeight = ref(0) // 键盘高度
-const editorFocused = ref(false) // 编辑器是否聚焦
+const savedSuccessfully = ref(false)
 
 // 标签相关
 const showTagSelector = ref(false)
 const selectedTagIds = ref([])
 
-// 折叠状态
+// 折叠状态（默认全部展开，子分类默认折叠）
 const sectionExpanded = reactive({
+  title: true,
+  content: true,
   description: true,
-  category: true,
+  category: false,
   tags: true
 })
 
@@ -201,49 +196,49 @@ const formData = reactive({
   mainCategoryId: ''
 })
 
+// 初始数据快照（用于检测修改）
+const initialSnapshot = ref({
+  name: '',
+  description: '',
+  noteContent: '',
+  tagIds: []
+})
+
+// 检测是否有修改
+const hasModified = computed(() => {
+  if (formData.name.trim() !== initialSnapshot.value.name) return true
+  if (formData.description.trim() !== initialSnapshot.value.description) return true
+  if (formData.noteContent !== initialSnapshot.value.noteContent) return true
+
+  const currentTagIds = selectedTags.value.map(t => t.id).sort().join(',')
+  const initialTagIds = initialSnapshot.value.tagIds.sort().join(',')
+  if (currentTagIds !== initialTagIds) return true
+
+  return false
+})
+
 // 页面加载
 onLoad((options) => {
   if (options.id) {
     contentId.value = options.id
     isEdit.value = options.mode === 'edit'
-    setTimeout(() => {
-      loadContentDetail()
-    }, 500) // 等待编辑器初始化
-  }
-
-  if (options.subCategoryId) {
-    formData.subCategoryId = options.subCategoryId
-    // 从store获取子分类信息
-    const categoryStore = useCategoryStore()
-    if (categoryStore.currentSubCategory) {
-      selectedSubCategory.value = categoryStore.currentSubCategory
+  } else {
+    // 新建模式
+    if (options.subCategoryId) {
+      formData.subCategoryId = options.subCategoryId
+      const categoryStore = useCategoryStore()
+      if (categoryStore.currentSubCategory) {
+        selectedSubCategory.value = categoryStore.currentSubCategory
+      }
     }
-  }
 
-  if (options.mainCategoryId) {
-    formData.mainCategoryId = options.mainCategoryId
-  }
-})
-
-// 监听键盘高度变化
-onMounted(() => {
-  uni.onKeyboardHeightChange((res) => {
-    keyboardHeight.value = res.height
-    // 键盘收起时隐藏格式化工具栏
-    if (res.height === 0) {
-      showFormatToolbar.value = false
-      editorFocused.value = false
+    if (options.mainCategoryId) {
+      formData.mainCategoryId = options.mainCategoryId
     }
-    // 键盘弹起且编辑器聚焦时显示格式化工具栏
-    else if (res.height > 0 && editorFocused.value) {
-      showFormatToolbar.value = true
-    }
-  })
-})
 
-// 清理监听
-onUnmounted(() => {
-  uni.offKeyboardHeightChange()
+    // 保存初始空快照
+    saveInitialSnapshot()
+  }
 })
 
 // App 平台支持物理返回键拦截
@@ -268,42 +263,35 @@ onBackPress(() => {
 })
 // #endif
 
+// 保存初始数据快照
+const saveInitialSnapshot = () => {
+  initialSnapshot.value = {
+    name: formData.name.trim(),
+    description: formData.description.trim(),
+    noteContent: formData.noteContent,
+    tagIds: selectedTags.value.map(t => t.id)
+  }
+}
+
 // 编辑器就绪
 const onEditorReady = () => {
   uni.createSelectorQuery()
     .select('#editor')
     .context((res) => {
       editorCtx.value = res.context
+      // 如果是编辑模式，等编辑器准备好后再加载内容
+      if (isEdit.value && contentId.value) {
+        setTimeout(() => {
+          loadContentDetail()
+        }, 300)
+      }
     })
     .exec()
 }
 
 // 编辑器输入
 const onEditorInput = (e) => {
-  // 实时更新内容（可选）
-  console.log('Editor input:', e.detail.html)
-  hasModified.value = true
-}
-
-// 编辑器聚焦
-const onEditorFocus = () => {
-  editorFocused.value = true
-  showFormatToolbar.value = true
-}
-
-// 编辑器失焦
-const onEditorBlur = () => {
-  editorFocused.value = false
-  // 延迟隐藏，避免点击工具栏按钮时立即隐藏
-  setTimeout(() => {
-    showFormatToolbar.value = false
-  }, 200)
-}
-
-// 其他输入框聚焦（标题、简介等）
-const onOtherInputFocus = () => {
-  editorFocused.value = false
-  showFormatToolbar.value = false
+  formData.noteContent = e.detail.html || ''
 }
 
 // 加载内容详情（编辑模式）
@@ -313,9 +301,20 @@ const loadContentDetail = async () => {
     const detail = res.data || res
 
     formData.name = detail.title || detail.name || ''
-    formData.description = detail.description
+    formData.description = detail.description || ''
+    formData.noteContent = detail.noteContent || ''
     formData.subCategoryId = detail.subCategoryId
     formData.mainCategoryId = detail.mainCategoryId
+
+    // 获取子分类信息
+    if (detail.subCategoryId) {
+      try {
+        const subCategoryRes = await categoryApi.getSubCategoryById(detail.subCategoryId)
+        selectedSubCategory.value = subCategoryRes.data || subCategoryRes
+      } catch (error) {
+        console.error('Load sub-category error:', error)
+      }
+    }
 
     // 设置编辑器内容
     if (editorCtx.value && detail.noteContent) {
@@ -325,14 +324,28 @@ const loadContentDetail = async () => {
     }
 
     // 处理标签
-    if (detail.tagDTOList) {
+    if (detail.tagDTOList && detail.tagDTOList.length > 0) {
       selectedTags.value = detail.tagDTOList
+    } else {
+      // 如果详情接口没有返回标签，尝试单独获取
+      try {
+        const tagsRes = await contentApi.getContentTags(contentId.value)
+        if (tagsRes.data && Array.isArray(tagsRes.data)) {
+          selectedTags.value = tagsRes.data
+        }
+      } catch (error) {
+        console.error('Load content tags error:', error)
+      }
     }
 
-    // 重置修改标记（加载完成后，用户还没有做任何修改）
-    hasModified.value = false
+    // 保存初始快照
+    saveInitialSnapshot()
   } catch (error) {
     console.error('Load content detail error:', error)
+    uni.showToast({
+      title: '加载失败',
+      icon: 'none'
+    })
   }
 }
 
@@ -351,8 +364,15 @@ const format = (name, value) => {
 const insertImage = () => {
   uni.chooseImage({
     count: 1,
+    sizeType: ['compressed'],
+    sourceType: ['album', 'camera'],
     success: (res) => {
       const tempFilePath = res.tempFilePaths[0]
+
+      uni.showLoading({
+        title: '上传中...',
+        mask: true
+      })
 
       // 上传图片
       uni.uploadFile({
@@ -361,25 +381,46 @@ const insertImage = () => {
         name: 'files',
         success: (uploadRes) => {
           if (uploadRes.statusCode === 200) {
-            const data = JSON.parse(uploadRes.data)
-            // API 返回 ResultListString 格式：data 是字符串数组
-            let imageUrl = ''
-            if (Array.isArray(data.data) && data.data.length > 0) {
-              imageUrl = data.data[0]
-            } else if (typeof data.data === 'string') {
-              imageUrl = data.data
-            } else if (data.url) {
-              imageUrl = data.url
-            }
+            try {
+              const data = JSON.parse(uploadRes.data)
+              let imageUrl = ''
+              if (Array.isArray(data.data) && data.data.length > 0) {
+                imageUrl = data.data[0]
+              } else if (typeof data.data === 'string') {
+                imageUrl = data.data
+              } else if (data.url) {
+                imageUrl = data.url
+              }
 
-            if (imageUrl && editorCtx.value) {
-              editorCtx.value.insertImage({
-                src: imageUrl,
-                alt: '图片',
-                width: '100%'
+              if (imageUrl && editorCtx.value) {
+                editorCtx.value.insertImage({
+                  src: config.API_BASE_URL + imageUrl,
+                  alt: '图片',
+                  width: '100%'
+                })
+              }
+            } catch (e) {
+              console.error('Parse upload response error:', e)
+              uni.showToast({
+                title: '上传失败',
+                icon: 'none'
               })
             }
+          } else {
+            uni.showToast({
+              title: '上传失败',
+              icon: 'none'
+            })
           }
+        },
+        fail: () => {
+          uni.showToast({
+            title: '上传失败',
+            icon: 'none'
+          })
+        },
+        complete: () => {
+          uni.hideLoading()
         }
       })
     }
@@ -408,32 +449,31 @@ const handleTagCancel = () => {
   // 不做任何操作
 }
 
-// 切换折叠状态
-const toggleSection = (section) => {
-  sectionExpanded[section] = !sectionExpanded[section]
-}
-
 // 移除标签
 const removeTag = (tag) => {
   selectedTags.value = selectedTags.value.filter(t => t.id !== tag.id)
 }
 
+// 切换折叠状态
+const toggleSection = (section) => {
+  sectionExpanded[section] = !sectionExpanded[section]
+}
+
 // 取消
 const cancel = () => {
-  if (!hasModified.value) {
-    uni.navigateBack()
-    return
-  }
-
-  uni.showModal({
-    title: '提示',
-    content: '确定要取消吗？未保存的内容将丢失',
-    success: (res) => {
-      if (res.confirm) {
-        uni.navigateBack()
+  if (hasModified.value) {
+    uni.showModal({
+      title: '提示',
+      content: '您有未保存的修改，确定要离开吗？',
+      success: (res) => {
+        if (res.confirm) {
+          uni.navigateBack()
+        }
       }
-    }
-  })
+    })
+  } else {
+    uni.navigateBack()
+  }
 }
 
 // 提交
@@ -463,7 +503,10 @@ const submit = async () => {
   if (editorCtx.value) {
     editorCtx.value.getContents({
       success: async (res) => {
-        if (!res.html || res.html.trim() === '<p><br></p>') {
+        const htmlContent = res.html || ''
+
+        // 验证内容不为空
+        if (!htmlContent || htmlContent.trim() === '<p><br></p>' || htmlContent.trim() === '') {
           uni.showToast({
             title: '请输入内容',
             icon: 'none'
@@ -485,7 +528,7 @@ const submit = async () => {
             subCategoryId: formData.subCategoryId,
             mainCategoryId: formData.mainCategoryId,
             contentType: 'note',
-            noteContent: res.html,
+            noteContent: htmlContent,
             tagIdList: selectedTags.value.map(tag => tag.id)
           }
 
@@ -498,7 +541,7 @@ const submit = async () => {
           } else {
             await contentApi.createContent(data)
             uni.showToast({
-              title: '发布成功',
+              title: '创建成功',
               icon: 'success'
             })
           }
@@ -519,9 +562,20 @@ const submit = async () => {
           uni.hideLoading()
           submitting.value = false
         }
+      },
+      fail: () => {
+        uni.showToast({
+          title: '获取内容失败',
+          icon: 'none'
+        })
+        submitting.value = false
       }
     })
   } else {
+    uni.showToast({
+      title: '编辑器未就绪',
+      icon: 'none'
+    })
     submitting.value = false
   }
 }
@@ -529,56 +583,25 @@ const submit = async () => {
 
 <style scoped>
 .create-note-page {
-  height: 100vh;
+  min-height: 100vh;
   background: #f5f5f5;
-  display: flex;
-  flex-direction: column;
+  padding-bottom: calc(120rpx + constant(safe-area-inset-bottom));
+  padding-bottom: calc(120rpx + env(safe-area-inset-bottom));
 }
 
-/* 滚动区域 */
 .content-scroll {
-  flex: 1;
-  overflow-y: auto;
-}
-
-/* 标题区域 */
-.title-section {
-  padding: 30rpx 40rpx;
-  border-bottom: 1rpx solid rgba(0, 0, 0, 0.08);
-}
-
-.title-input {
-  font-size: 44rpx;
-  font-weight: 700;
-  color: #333333;
-  line-height: 1.4;
-}
-
-.input-placeholder {
-  color: #cccccc;
-}
-
-/* 编辑器区域 */
-.editor-section {
-  min-height: 400rpx;
-}
-
-.editor {
-  min-height: 400rpx;
-  padding: 30rpx 40rpx;
-  font-size: 30rpx;
-  line-height: 1.8;
-  color: #333333;
-}
-
-/* 表单区域 */
-.form-section {
-  padding: 20rpx 40rpx;
+  height: 100vh;
+  padding-bottom: calc(136rpx + constant(safe-area-inset-bottom));
+  padding-bottom: calc(136rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
 }
 
 /* 折叠区域 */
 .collapsible-section {
-  margin-bottom: 24rpx;
+  background: #ffffff;
+  margin: 20rpx 30rpx;
+  border-radius: 12rpx;
+  overflow: hidden;
 }
 
 .section-header {
@@ -587,8 +610,11 @@ const submit = async () => {
   align-items: center;
   padding: 24rpx 28rpx;
   background: #ffffff;
-  border-radius: 12rpx;
   cursor: pointer;
+}
+
+.section-header:active {
+  background: #f9f9f9;
 }
 
 .section-title {
@@ -604,113 +630,81 @@ const submit = async () => {
 }
 
 .section-content {
-  margin-top: 12rpx;
+  padding: 0 28rpx 24rpx 28rpx;
 }
 
-.form-item {
-  margin-bottom: 40rpx;
-}
-
-.form-label {
-  display: block;
+/* 表单输入 */
+.form-input {
+  width: 100%;
+  padding: 24rpx 28rpx;
+  background: #f5f5f5;
+  border: 1rpx solid rgba(0, 0, 0, 0.08);
+  border-radius: 12rpx;
   font-size: 28rpx;
   color: #333333;
-  margin-bottom: 20rpx;
-  font-weight: 500;
+  box-sizing: border-box;
+  min-height: 80rpx;
+  line-height: 1.5;
 }
 
 .form-textarea {
   width: 100%;
   padding: 24rpx 28rpx;
-  background: #ffffff;
+  background: #f5f5f5;
   border: 1rpx solid rgba(0, 0, 0, 0.08);
   border-radius: 12rpx;
   font-size: 28rpx;
   color: #333333;
+  box-sizing: border-box;
   min-height: 150rpx;
+  line-height: 1.6;
+}
+
+.input-placeholder {
+  color: #cccccc;
 }
 
 .form-display {
+  width: 100%;
   padding: 24rpx 28rpx;
   background: #f5f5f5;
   border: 1rpx solid rgba(0, 0, 0, 0.08);
   border-radius: 12rpx;
+  box-sizing: border-box;
 }
 
 .display-text {
   font-size: 28rpx;
   color: #666666;
+  word-break: break-word;
+  white-space: normal;
 }
 
-/* 标签容器 */
-.tags-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16rpx;
+/* 编辑器容器 */
+.editor-container {
+  width: 100%;
+  background: #f5f5f5;
+  border: 1rpx solid rgba(0, 0, 0, 0.08);
+  border-radius: 12rpx;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
-.tag-chip {
-  display: flex;
-  align-items: center;
-  gap: 12rpx;
-  padding: 12rpx 20rpx;
-  background: rgba(0, 196, 179, 0.15);
-  border: 1rpx solid rgba(0, 196, 179, 0.3);
-  border-radius: 8rpx;
-}
-
-.tag-text {
-  font-size: 24rpx;
-  color: #00c4b3;
-}
-
-.tag-close {
-  font-size: 32rpx;
-  color: rgba(0, 196, 179, 0.6);
-  line-height: 1;
-}
-
-.add-tag-btn {
-  padding: 12rpx 20rpx;
-  background: rgba(0, 0, 0, 0.03);
-  border: 1rpx dashed rgba(0, 0, 0, 0.1);
-  border-radius: 8rpx;
-  font-size: 24rpx;
-  color: #999999;
-}
-
-/* 底部占位（为固定按钮留空间） */
-.bottom-placeholder {
-  height: 150rpx;
-}
-
-/* 操作按钮（固定在底部） */
-.action-toolbar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  gap: 20rpx;
-  padding: 20rpx 30rpx;
-  padding-bottom: calc(20rpx + constant(safe-area-inset-bottom));
-  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
-  background: rgba(255, 255, 255, 0.98);
-  backdrop-filter: blur(20rpx);
-  border-top: 1rpx solid rgba(0, 0, 0, 0.06);
-  z-index: 98;
-}
-
-/* 格式化工具栏（跟随键盘） */
+/* 格式化工具栏（编辑器顶部） */
 .format-toolbar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: rgba(255, 255, 255, 0.98);
-  backdrop-filter: blur(20rpx);
-  border-top: 1rpx solid rgba(0, 0, 0, 0.08);
-  z-index: 99;
+  background: #ffffff;
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.08);
+}
+
+.editor {
+  min-height: 400rpx;
+  padding: 20rpx 28rpx;
+  font-size: 28rpx;
+  line-height: 1.8;
+  color: #333333;
+  background: #f5f5f5;
+  box-sizing: border-box;
+  border: none;
 }
 
 .toolbar-scroll {
@@ -723,6 +717,7 @@ const submit = async () => {
   align-items: center;
   padding: 0 20rpx;
   gap: 8rpx;
+  height: 100%;
 }
 
 .tool-btn {
@@ -768,15 +763,74 @@ const submit = async () => {
   margin: 0 8rpx;
 }
 
+/* 标签容器 */
+.tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  width: 100%;
+}
+
+.tag-chip {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 12rpx 20rpx;
+  background: rgba(0, 196, 179, 0.15);
+  border: 1rpx solid rgba(0, 196, 179, 0.3);
+  border-radius: 8rpx;
+  max-width: 100%;
+}
+
+.tag-text {
+  font-size: 24rpx;
+  color: #00c4b3;
+  word-break: break-word;
+  white-space: normal;
+}
+
+.tag-close {
+  font-size: 32rpx;
+  color: rgba(0, 196, 179, 0.6);
+  line-height: 1;
+}
+
+.add-tag-btn {
+  padding: 12rpx 20rpx;
+  background: rgba(0, 0, 0, 0.03);
+  border: 1rpx dashed rgba(0, 0, 0, 0.1);
+  border-radius: 8rpx;
+  font-size: 24rpx;
+  color: #999999;
+}
+
+/* 底部按钮 */
+.bottom-actions {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  gap: 20rpx;
+  padding: 24rpx 30rpx;
+  padding-bottom: calc(24rpx + constant(safe-area-inset-bottom));
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20rpx);
+  border-top: 1rpx solid rgba(0, 0, 0, 0.08);
+  z-index: 100;
+}
+
 .action-btn {
   flex: 1;
-  height: 80rpx;
+  height: 88rpx;
   border-radius: 16rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 30rpx;
   font-weight: 500;
+  transition: all 0.2s ease;
 }
 
 .action-btn.cancel {
