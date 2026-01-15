@@ -220,16 +220,16 @@ onMounted(() => {
 
 <style scoped>
 .collection-page {
-  min-height: 100vh;
+  height: 100vh;
   background: #f5f5f5;
+  display: flex;
+  flex-direction: column;
 }
 
 /* 自定义导航栏 */
 .custom-navbar {
-  position: fixed;
+  position: sticky;
   top: 0;
-  left: 0;
-  right: 0;
   height: 88rpx;
   padding-top: constant(safe-area-inset-top);
   padding-top: env(safe-area-inset-top);
@@ -252,13 +252,13 @@ onMounted(() => {
 
 /* 滚动容器 */
 .collection-scroll {
-  height: 100vh;
-  padding-top: calc(88rpx + constant(safe-area-inset-top));
-  padding-top: calc(88rpx + env(safe-area-inset-top));
+  flex: 1;
+  overflow-y: auto;
 }
 
 .collection-container {
   padding: 30rpx;
+  min-height: 100%;
 }
 
 /* 内容卡片 */
@@ -399,6 +399,7 @@ onMounted(() => {
 
 /* 底部占位 */
 .bottom-placeholder {
-  height: 120rpx;
+  height: calc(120rpx + constant(safe-area-inset-bottom));
+  height: calc(120rpx + env(safe-area-inset-bottom));
 }
 </style>

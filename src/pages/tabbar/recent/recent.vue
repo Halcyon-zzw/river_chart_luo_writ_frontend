@@ -667,7 +667,7 @@ const formatTime = (time) => {
 
 <style scoped>
 .recent-page {
-  min-height: 100vh;
+  height: 100vh;
   background: #f5f5f5;
   display: flex;
   flex-direction: column;
@@ -675,15 +675,14 @@ const formatTime = (time) => {
 
 /* 自定义导航栏 */
 .custom-navbar {
-  position: fixed;
+  position: sticky;
   top: 0;
-  left: 0;
-  right: 0;
   height: 88rpx;
   padding-top: constant(safe-area-inset-top);
   padding-top: env(safe-area-inset-top);
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20rpx);
+  -webkit-backdrop-filter: blur(20rpx);
   z-index: 999;
   display: flex;
   align-items: center;
@@ -700,13 +699,16 @@ const formatTime = (time) => {
 
 /* Tab栏 */
 .tab-bar {
-  position: relative;
+  position: sticky;
+  top: calc(88rpx + constant(safe-area-inset-top));
+  top: calc(88rpx + env(safe-area-inset-top));
   display: flex;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20rpx);
+  -webkit-backdrop-filter: blur(20rpx);
   padding: 20rpx 60rpx;
-  margin-top: calc(88rpx + constant(safe-area-inset-top));
-  margin-top: calc(88rpx + env(safe-area-inset-top));
   border-bottom: 1rpx solid rgba(0, 0, 0, 0.08);
+  z-index: 99;
 }
 
 .tab-item {
@@ -742,11 +744,15 @@ const formatTime = (time) => {
 
 /* 搜索和筛选栏 */
 .search-filter-container {
+  position: sticky;
+  top: calc(160rpx + constant(safe-area-inset-top));
+  top: calc(160rpx + env(safe-area-inset-top));
   background: #f5f5f5;
   padding: 20rpx 30rpx;
   display: flex;
   gap: 20rpx;
   align-items: center;
+  z-index: 98;
 }
 
 .search-box {
@@ -804,11 +810,15 @@ const formatTime = (time) => {
 
 /* 操作栏 */
 .action-bar {
+  position: sticky;
+  top: calc(270rpx + constant(safe-area-inset-top));
+  top: calc(270rpx + env(safe-area-inset-top));
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 16rpx 30rpx;
   background: #f5f5f5;
+  z-index: 97;
 }
 
 .action-left {
@@ -852,11 +862,13 @@ const formatTime = (time) => {
 .content-scroll {
   flex: 1;
   background: #f5f5f5;
+  overflow-y: auto;
 }
 
 /* 华为图库风格 */
 .gallery-container {
   padding: 10rpx 30rpx 0;
+  min-height: 100%;
 }
 
 .gallery-item {
@@ -951,6 +963,7 @@ const formatTime = (time) => {
 /* 笔记列表 */
 .note-list {
   padding: 20rpx 30rpx;
+  min-height: 100%;
 }
 
 .note-card-wrapper {
@@ -1119,6 +1132,7 @@ const formatTime = (time) => {
 
 /* 底部占位 */
 .bottom-placeholder {
-  height: 100rpx;
+  height: calc(120rpx + constant(safe-area-inset-bottom));
+  height: calc(120rpx + env(safe-area-inset-bottom));
 }
 </style>

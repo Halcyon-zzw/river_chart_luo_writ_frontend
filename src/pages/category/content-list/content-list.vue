@@ -734,7 +734,7 @@ const batchDelete = async () => {
 
 <style scoped>
 .content-list-page {
-  min-height: 100vh;
+  height: 100vh;
   background: #f5f5f5;
   display: flex;
   flex-direction: column;
@@ -801,6 +801,9 @@ const batchDelete = async () => {
 
 /* Tab栏 */
 .tab-bar {
+  position: sticky;
+  top: calc(88rpx + constant(safe-area-inset-top));
+  top: calc(88rpx + env(safe-area-inset-top));
   height: 88rpx;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20rpx);
@@ -808,6 +811,7 @@ const batchDelete = async () => {
   align-items: center;
   justify-content: center;
   border-bottom: 1rpx solid rgba(0, 0, 0, 0.08);
+  z-index: 99;
 }
 
 .tab-item {
@@ -845,11 +849,15 @@ const batchDelete = async () => {
 
 /* 搜索容器 */
 .search-container {
+  position: sticky;
+  top: calc(176rpx + constant(safe-area-inset-top));
+  top: calc(176rpx + env(safe-area-inset-top));
   background: #f5f5f5;
   padding: 20rpx 30rpx;
   display: flex;
   gap: 20rpx;
   align-items: center;
+  z-index: 98;
 }
 
 .search-box {
@@ -904,11 +912,13 @@ const batchDelete = async () => {
 /* 滚动容器 */
 .content-scroll {
   flex: 1;
+  overflow-y: auto;
 }
 
 /* 华为图库风格 */
 .gallery-container {
   padding: 10rpx 30rpx 0;
+  min-height: 100%;
 }
 
 .gallery-item {
@@ -991,6 +1001,7 @@ const batchDelete = async () => {
 /* 文本列表 */
 .note-list {
   padding: 20rpx 30rpx 0;
+  min-height: 100%;
 }
 
 .note-card-wrapper {
@@ -1122,7 +1133,8 @@ const batchDelete = async () => {
 
 /* 底部占位 */
 .bottom-placeholder {
-  height: 150rpx;
+  height: calc(120rpx + constant(safe-area-inset-bottom));
+  height: calc(120rpx + env(safe-area-inset-bottom));
 }
 
 /* 悬浮按钮 */
