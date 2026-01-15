@@ -2,7 +2,7 @@
   <!-- 自定义导航栏 -->
   <view class="custom-nav-bar" :style="{ paddingTop: statusBarHeight + 'px' }">
     <view class="nav-bar-content" :style="{ height: navBarHeight + 'px' }">
-      <view class="nav-bar-left" @click="handleBack">
+      <view v-if="showBack" class="nav-bar-left" @click="handleBack">
         <text class="back-icon">‹</text>
         <text class="back-text">返回</text>
       </view>
@@ -26,6 +26,11 @@ const props = defineProps({
   title: {
     type: String,
     default: ''
+  },
+  // 是否显示返回按钮
+  showBack: {
+    type: Boolean,
+    default: true
   },
   // 是否需要确认返回（有未保存的修改）
   needConfirm: {

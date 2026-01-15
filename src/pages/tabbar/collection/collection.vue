@@ -1,7 +1,7 @@
 <template>
   <view class="collection-page">
     <!-- 自定义导航栏 -->
-    <custom-nav-bar title="收藏" />
+    <custom-nav-bar title="收藏" :show-back="false" />
 
     <!-- Tab切换 -->
     <view class="tab-bar">

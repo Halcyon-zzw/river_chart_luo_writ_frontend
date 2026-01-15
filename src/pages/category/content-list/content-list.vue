@@ -76,9 +76,31 @@
             :class="{ 'long-pressing': longPressingId === item.id }"
             @touchstart="onImageTouchStart($event, item)"
             @touchend="onImageTouchEnd($event, item)"
-            @click="selectionMode ? toggleSelection(item) : goToImageDetail(item, 0)"
+            @click="selectionMode ? toggleSelection(item) : goToImageDetailPage(item)"
           >
             <text class="gallery-title">{{ item.title || '未命名' }}</text>
+          </view>
+
+          <!-- 标签和日期 -->
+          <view class="gallery-meta">
+            <view v-if="item.tagDTOList && item.tagDTOList.length > 0" class="gallery-tags">
+              <text
+                v-for="tag in getDisplayTags(item)"
+                :key="tag.id"
+                class="meta-tag"
+              >
+                {{ tag.name }}
+              </text>
+              <!-- 展开/收起按钮 - 仅当标签数量大于3时显示 -->
+              <view
+                v-if="item.tagDTOList && item.tagDTOList.length > 3"
+                class="tag-expand-btn"
+                @click.stop="toggleTagsExpand(item.id)"
+              >
+                <text>{{ expandedTags.has(item.id) ? '' : '...' }}</text>
+              </view>
+            </view>
+            <text class="gallery-date">{{ formatTime(item.createTime) }}</text>
           </view>
 
           <!-- 图片网格 -->
@@ -219,7 +241,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { onLoad, onShow } from '@dcloudio/uni-app'
+import { onLoad, onShow, onBackPress } from '@dcloudio/uni-app'
 import { contentApi } from '@/api'
 import { useCategoryStore } from '@/store/category'
 import { getFullImageUrl } from '@/utils/image'
@@ -340,6 +362,16 @@ onShow(async () => {
   loadContents(true)
 })
 
+// 拦截返回事件
+onBackPress(() => {
+  // 如果预览可见，关闭预览而不是导航返回
+  if (previewVisible.value) {
+    previewVisible.value = false
+    return true // 阻止默认返回行为
+  }
+  return false // 允许默认返回行为
+})
+
 // 监听Tab切换
 watch(currentTab, (newVal, oldVal) => {
   console.log(`[Content-list] 🔄 Tab changed from "${oldVal}" to "${newVal}"`)
@@ -413,7 +445,19 @@ const getDisplayImages = (item) => {
   return item.imageUrlList.slice(0, 12)
 }
 
-// 跳转到图片详情/预览
+// 跳转到图片详情页
+const goToImageDetailPage = (item) => {
+  if (selectionMode.value) {
+    toggleSelection(item)
+    return
+  }
+
+  uni.navigateTo({
+    url: `/pages/content/image-detail/image-detail?id=${item.id}`
+  })
+}
+
+// 打开图片预览
 const goToImageDetail = (item, imageIndex) => {
   if (selectionMode.value) {
     toggleSelection(item)
@@ -468,6 +512,18 @@ const createContent = () => {
     : `/pages/content/create-note/create-note?subCategoryId=${subCategoryId.value}`
 
   uni.navigateTo({ url })
+}
+
+// 编辑图片内容
+const editImageContent = (item) => {
+  if (selectionMode.value) {
+    toggleSelection(item)
+    return
+  }
+
+  uni.navigateTo({
+    url: `/pages/content/create-image/create-image?id=${item.id}&mode=edit&subCategoryId=${subCategoryId.value}&mainCategoryId=${mainCategoryId.value}`
+  })
 }
 
 // 获取文本预览
@@ -948,6 +1004,51 @@ const batchDelete = async () => {
   font-weight: 500;
   color: #333333;
   line-height: 1.4;
+}
+
+/* 标签和日期 */
+.gallery-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  padding: 12rpx 0;
+}
+
+.gallery-tags {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.meta-tag {
+  padding: 6rpx 16rpx;
+  background: rgba(0, 196, 179, 0.12);
+  border: 1rpx solid rgba(0, 196, 179, 0.25);
+  border-radius: 6rpx;
+  font-size: 22rpx;
+  color: #00c4b3;
+  white-space: nowrap;
+}
+
+.tag-expand-btn {
+  padding: 6rpx 12rpx;
+  font-size: 20rpx;
+  color: #999999;
+  cursor: pointer;
+}
+
+.tag-expand-btn:active {
+  opacity: 0.6;
+}
+
+.gallery-date {
+  font-size: 22rpx;
+  color: #999999;
+  white-space: nowrap;
+  margin-left: auto;
 }
 
 /* 图片网格 */

@@ -7,7 +7,11 @@
       confirmText="您有未保存的修改，确定要离开吗？"
     />
 
-    <scroll-view class="content-scroll" scroll-y>
+    <scroll-view
+      class="content-scroll"
+      scroll-y
+      :style="{ height: scrollViewHeight + 'px' }"
+    >
       <!-- 图片上传区域 -->
       <view class="collapsible-section">
         <view class="section-header" @click="toggleSection('images')">
@@ -121,6 +125,9 @@
           </view>
         </view>
       </view>
+
+      <!-- 底部占位 -->
+      <view class="bottom-placeholder"></view>
     </scroll-view>
 
     <!-- 标签选择器 -->
@@ -145,7 +152,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onUnmounted } from 'vue'
 import { onLoad, onBackPress } from '@dcloudio/uni-app'
 import { contentApi, tagApi, categoryApi } from '@/api'
 import { useCategoryStore } from '@/store/category'
@@ -164,16 +171,21 @@ const selectedTags = ref([])
 const submitting = ref(false)
 const savedSuccessfully = ref(false) // 标记是否成功保存
 
+// 键盘相关
+const windowHeight = ref(0)
+const navBarHeight = ref(0)
+const scrollViewHeight = ref(0)
+
 // 标签相关
 const showTagSelector = ref(false)
 const selectedTagIds = ref([])
 
-// 折叠状态（默认全部展开，子分类默认折叠）
+// 折叠状态（默认全部展开）
 const sectionExpanded = reactive({
   images: true,
   title: true,
   description: true,
-  category: false, // 子分类默认折叠
+  category: true, // 子分类默认展开
   tags: true
 })
 
@@ -235,6 +247,40 @@ onLoad((options) => {
     // 保存初始空快照
     saveInitialSnapshot()
   }
+
+  // 获取窗口高度
+  const systemInfo = uni.getSystemInfoSync()
+  windowHeight.value = systemInfo.windowHeight
+
+  // 动态计算导航栏高度（状态栏 + 导航栏内容）
+  const statusBarHeight = systemInfo.statusBarHeight || 0
+  // #ifdef MP-WEIXIN
+  const menuButtonInfo = uni.getMenuButtonBoundingClientRect()
+  navBarHeight.value = (menuButtonInfo.top - statusBarHeight) * 2 + menuButtonInfo.height + statusBarHeight
+  // #endif
+  // #ifndef MP-WEIXIN
+  navBarHeight.value = 44 // 非微信小程序使用默认值
+  // #endif
+
+  // 初始化 scroll-view 高度（窗口高度 - 导航栏高度）
+  scrollViewHeight.value = windowHeight.value - navBarHeight.value
+
+  // 监听键盘高度变化
+  uni.onKeyboardHeightChange((res) => {
+    // 当键盘弹出时，调整 scroll-view 高度 = 窗口高度 - 导航栏高度 - 键盘高度
+    // 这样 scroll-view 的底部刚好到达键盘顶部，按钮被键盘自然遮挡
+    if (res.height > 0) {
+      scrollViewHeight.value = windowHeight.value - navBarHeight.value - res.height
+    } else {
+      // 键盘收起时恢复原高度
+      scrollViewHeight.value = windowHeight.value - navBarHeight.value
+    }
+  })
+})
+
+// 组件卸载时移除监听器
+onUnmounted(() => {
+  uni.offKeyboardHeightChange()
 })
 
 // App 平台支持物理返回键拦截
@@ -300,17 +346,6 @@ const loadContentDetail = async () => {
     // 处理标签
     if (detail.tagDTOList && detail.tagDTOList.length > 0) {
       selectedTags.value = detail.tagDTOList
-    } else {
-      // 如果详情接口没有返回标签，尝试单独获取
-      try {
-        const tagsRes = await contentApi.getContentTags(contentId.value)
-        if (tagsRes.data && Array.isArray(tagsRes.data)) {
-          selectedTags.value = tagsRes.data
-        }
-      } catch (error) {
-        console.error('Load content tags error:', error)
-        // 标签加载失败不影响主流程
-      }
     }
 
     // 保存初始快照
@@ -548,17 +583,12 @@ const submit = async () => {
 
 <style scoped>
 .create-image-page {
-  min-height: 100vh;
+  height: 100vh;
   background: #f5f5f5;
-  padding-bottom: calc(120rpx + constant(safe-area-inset-bottom));
-  padding-bottom: calc(120rpx + env(safe-area-inset-bottom));
 }
 
 .content-scroll {
-  height: 100vh;
-  /* 底部留出按钮栏的空间：按钮高度88rpx + 上下padding 48rpx + safe-area */
-  padding-bottom: calc(136rpx + constant(safe-area-inset-bottom));
-  padding-bottom: calc(136rpx + env(safe-area-inset-bottom));
+  /* 高度由内联样式动态控制 */
   box-sizing: border-box;
 }
 
@@ -771,6 +801,12 @@ const submit = async () => {
   border-radius: 8rpx;
   font-size: 24rpx;
   color: #999999;
+}
+
+/* 底部占位 */
+.bottom-placeholder {
+  height: calc(136rpx + constant(safe-area-inset-bottom));
+  height: calc(136rpx + env(safe-area-inset-bottom));
 }
 
 /* 底部按钮 */

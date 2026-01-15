@@ -120,16 +120,19 @@
         </view>
       </view>
 
-      <!-- 底部按钮（放在滚动区域内） -->
-      <view class="bottom-actions">
-        <view class="action-btn cancel" @click="cancel">
-          <text>取消</text>
-        </view>
-        <view class="action-btn submit" @click="submit">
-          <text>{{ isEdit ? '保存' : '发布' }}</text>
-        </view>
-      </view>
+      <!-- 底部占位 -->
+      <view class="bottom-placeholder"></view>
     </scroll-view>
+
+    <!-- 底部按钮 -->
+    <view class="bottom-actions">
+      <view class="action-btn cancel" @click="cancel">
+        <text>取消</text>
+      </view>
+      <view class="action-btn submit" @click="submit">
+        <text>{{ isEdit ? '保存' : '发布' }}</text>
+      </view>
+    </view>
 
     <!-- 标签选择器 -->
     <tag-selector
@@ -350,16 +353,6 @@ const loadContentDetail = async () => {
     // 处理标签
     if (detail.tagDTOList && detail.tagDTOList.length > 0) {
       selectedTags.value = detail.tagDTOList
-    } else {
-      // 如果详情接口没有返回标签，尝试单独获取
-      try {
-        const tagsRes = await contentApi.getContentTags(contentId.value)
-        if (tagsRes.data && Array.isArray(tagsRes.data)) {
-          selectedTags.value = tagsRes.data
-        }
-      } catch (error) {
-        console.error('Load content tags error:', error)
-      }
     }
 
     // 保存初始快照
@@ -823,17 +816,27 @@ const submit = async () => {
   color: #999999;
 }
 
+/* 底部占位 */
+.bottom-placeholder {
+  height: calc(136rpx + constant(safe-area-inset-bottom));
+  height: calc(136rpx + env(safe-area-inset-bottom));
+}
+
 /* 底部按钮 */
 .bottom-actions {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
   display: flex;
   gap: 20rpx;
   padding: 24rpx 30rpx;
   padding-bottom: calc(24rpx + constant(safe-area-inset-bottom));
   padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20rpx);
   border-top: 1rpx solid rgba(0, 0, 0, 0.08);
-  margin: 20rpx 30rpx;
-  border-radius: 12rpx;
+  z-index: 100;
 }
 
 .action-btn {

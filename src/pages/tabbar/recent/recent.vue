@@ -1,9 +1,7 @@
 <template>
   <view class="recent-page">
     <!-- 自定义导航栏 -->
-    <view class="custom-navbar">
-      <view class="navbar-title">最近</view>
-    </view>
+    <custom-nav-bar title="最近" :show-back="false" />
 
     <!-- Tab切换 -->
     <view class="tab-bar">
@@ -208,6 +206,7 @@ import { browseHistoryApi } from '@/api'
 import { useUserStore } from '@/store/user'
 import { getFullImageUrl } from '@/utils/image'
 import ImagePreview from '@/components/image-preview/image-preview.vue'
+import CustomNavBar from '@/components/custom-nav-bar/custom-nav-bar.vue'
 
 const userStore = useUserStore()
 
@@ -671,30 +670,6 @@ const formatTime = (time) => {
   background: #f5f5f5;
   display: flex;
   flex-direction: column;
-}
-
-/* 自定义导航栏 */
-.custom-navbar {
-  position: sticky;
-  top: 0;
-  height: 88rpx;
-  padding-top: constant(safe-area-inset-top);
-  padding-top: env(safe-area-inset-top);
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20rpx);
-  -webkit-backdrop-filter: blur(20rpx);
-  z-index: 999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-bottom: 1rpx solid rgba(0, 0, 0, 0.08);
-}
-
-.navbar-title {
-  font-size: 36rpx;
-  font-weight: 600;
-  color: #333333;
-  letter-spacing: 2rpx;
 }
 
 /* Tab栏 */

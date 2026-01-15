@@ -2,7 +2,7 @@
   <view class="browse-page">
     <!-- 自定义导航栏 -->
     <view class="custom-navbar">
-      <view class="navbar-title">浏览</view>
+      <view class="navbar-title"></view>
     </view>
 
     <!-- 分类标签 -->

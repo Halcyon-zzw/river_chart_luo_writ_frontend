@@ -37,11 +37,14 @@
       </view>
 
       <!-- 图片展示区 -->
-      <view class="image-container" v-if="imageList.length > 0" @click="previewImage">
+      <view class="image-container" v-if="firstImageUrl" @click="previewImage">
         <image
           class="detail-image"
-          :src="getFullImageUrl(imageList[0])"
+          :src="firstImageUrl"
+          :key="firstImageUrl"
           mode="aspectFit"
+          @error="onImageError"
+          @load="onImageLoad"
         ></image>
       </view>
 
@@ -171,6 +174,15 @@ const isCollected = computed(() => {
   return collectionStore.isCollected(contentId.value)
 })
 
+// 计算第一张图片的完整URL
+const firstImageUrl = computed(() => {
+  if (imageList.value.length === 0) return ''
+  const url = getFullImageUrl(imageList.value[0])
+  console.log('[图片详情页] 第一张图片URL:', url)
+  console.log('[图片详情页] 原始路径:', imageList.value[0])
+  return url
+})
+
 // 页面加载
 onLoad((options) => {
   contentId.value = options.id
@@ -192,9 +204,15 @@ const loadContentDetail = async () => {
     const res = await contentApi.getContentById(contentId.value)
     contentDetail.value = res.data || res
 
+    console.log('[图片详情页] 加载内容详情:', contentDetail.value)
+    console.log('[图片详情页] imageUrlList字段:', contentDetail.value.imageUrlList)
+
     // 处理图片URL列表（新字段：imageUrlList 是字符串数组）
     if (contentDetail.value.imageUrlList && Array.isArray(contentDetail.value.imageUrlList)) {
       imageList.value = contentDetail.value.imageUrlList.filter(url => url && url.trim())
+      console.log('[图片详情页] 过滤后的imageList:', imageList.value)
+    } else {
+      console.warn('[图片详情页] imageUrlList不存在或不是数组')
     }
 
     // 创建浏览记录
@@ -221,11 +239,30 @@ const createBrowseHistory = async () => {
   }
 }
 
+// 图片加载成功
+const onImageLoad = (e) => {
+  console.log('[图片详情页] 图片加载成功:', e)
+}
+
+// 图片加载失败
+const onImageError = (e) => {
+  console.error('[图片详情页] 图片加载失败:', e)
+  console.error('[图片详情页] 当前图片URL:', firstImageUrl.value)
+  console.error('[图片详情页] imageList:', imageList.value)
+
+  uni.showToast({
+    title: '图片加载失败',
+    icon: 'none'
+  })
+}
+
 // 预览图片
 const previewImage = () => {
   if (imageList.value.length === 0) return
+  const urls = imageList.value.map(url => getFullImageUrl(url))
+  console.log('[图片详情页] 预览图片URLs:', urls)
   uni.previewImage({
-    urls: imageList.value.map(url => getFullImageUrl(url)),
+    urls: urls,
     current: 0
   })
 }
