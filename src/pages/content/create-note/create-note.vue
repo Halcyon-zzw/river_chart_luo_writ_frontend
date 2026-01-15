@@ -81,25 +81,6 @@
         </view>
       </view>
 
-      <!-- 简介 -->
-      <view class="collapsible-section">
-        <view class="section-header" @click="toggleSection('description')">
-          <text class="section-title">简介</text>
-          <text class="section-arrow">{{ sectionExpanded.description ? '▼' : '▶' }}</text>
-        </view>
-        <view v-if="sectionExpanded.description" class="section-content">
-          <textarea
-            class="form-textarea"
-            v-model="formData.description"
-            placeholder="请输入简介（选填）"
-            placeholder-class="input-placeholder"
-            :maxlength="500"
-            :adjust-position="true"
-            :show-confirm-bar="false"
-          />
-        </view>
-      </view>
-
       <!-- 分类显示（不可编辑） -->
       <view class="collapsible-section">
         <view class="section-header" @click="toggleSection('category')">
@@ -192,14 +173,12 @@ const selectedTagIds = ref([])
 const sectionExpanded = reactive({
   title: true,
   content: true,
-  description: true,
   category: true,
   tags: true
 })
 
 const formData = reactive({
   name: '',
-  description: '',
   noteContent: '',
   subCategoryId: '',
   mainCategoryId: ''
@@ -208,7 +187,6 @@ const formData = reactive({
 // 初始数据快照（用于检测修改）
 const initialSnapshot = ref({
   name: '',
-  description: '',
   noteContent: '',
   tagIds: []
 })
@@ -216,7 +194,6 @@ const initialSnapshot = ref({
 // 检测是否有修改
 const hasModified = computed(() => {
   if (formData.name.trim() !== initialSnapshot.value.name) return true
-  if (formData.description.trim() !== initialSnapshot.value.description) return true
   if (formData.noteContent !== initialSnapshot.value.noteContent) return true
 
   const currentTagIds = selectedTags.value.map(t => t.id).sort().join(',')
@@ -316,7 +293,6 @@ onBackPress(() => {
 const saveInitialSnapshot = () => {
   initialSnapshot.value = {
     name: formData.name.trim(),
-    description: formData.description.trim(),
     noteContent: formData.noteContent,
     tagIds: selectedTags.value.map(t => t.id)
   }
@@ -350,7 +326,6 @@ const loadContentDetail = async () => {
     const detail = res.data || res
 
     formData.name = detail.title || detail.name || ''
-    formData.description = detail.description || ''
     formData.noteContent = detail.noteContent || ''
     formData.subCategoryId = detail.subCategoryId
     formData.mainCategoryId = detail.mainCategoryId
@@ -573,7 +548,6 @@ const submit = async () => {
           // 提交数据
           const data = {
             title: formData.name,
-            description: formData.description,
             subCategoryId: formData.subCategoryId,
             mainCategoryId: formData.mainCategoryId,
             contentType: 'note',

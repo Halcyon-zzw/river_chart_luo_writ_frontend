@@ -14,11 +14,6 @@
           <text v-if="contentDetail.category" class="meta-text">{{ contentDetail.category }}</text>
         </view>
 
-        <!-- 描述 -->
-        <text v-if="contentDetail.description" class="note-description">
-          {{ contentDetail.description }}
-        </text>
-
         <!-- 标签 -->
         <view v-if="contentDetail.tagDTOList && contentDetail.tagDTOList.length > 0" class="note-tags">
           <text
@@ -239,15 +234,6 @@ const formatTime = (time) => {
 .meta-text {
   font-size: 24rpx;
   color: #999999;
-}
-
-.note-description {
-  display: block;
-  font-size: 28rpx;
-  color: #666666;
-  line-height: 1.6;
-  margin-top: 20rpx;
-  margin-bottom: 20rpx;
 }
 
 .note-tags {
