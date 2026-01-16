@@ -1,7 +1,7 @@
 // 全局配置文件
 export const config = {
   // 应用版本号
-  VERSION: '1.0.0',
+  VERSION: '1.1.0',
 
   // API基础地址
   // 注意：微信小程序真机调试要求HTTPS，且验证SSL证书有效性

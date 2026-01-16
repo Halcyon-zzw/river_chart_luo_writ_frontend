@@ -252,9 +252,9 @@ const tabs = [
 const timeRanges = [
   { value: 'all', label: '全部' },
   { value: 'today', label: '今天' },
-  { value: 'three_days', label: '三天内' },
-  { value: 'seven_days', label: '七天内' },
-  { value: 'one_month', label: '一个月内' }
+  { value: 'threeDays', label: '三天内' },
+  { value: 'sevenDays', label: '七天内' },
+  { value: 'oneMonth', label: '一个月内' }
 ]
 
 // 计算属性
@@ -308,7 +308,7 @@ const loadHistoryList = async (refresh = false) => {
 
     // 添加时间范围参数
     if (selectedTimeRange.value.value !== 'all') {
-      params.timeRange = selectedTimeRange.value.value
+      params.timeRangeType = selectedTimeRange.value.value
     }
 
     const res = await browseHistoryApi.getBrowseHistoryList(params)
