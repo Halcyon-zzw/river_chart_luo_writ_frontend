@@ -38,6 +38,13 @@ const requestInterceptor = (options) => {
     }
   }
 
+  // 添加自定义客户端标识请求头
+  options.header = {
+    ...options.header,
+    'X-Client-Type': 'RiverChartLuoWrit-MiniProgram',
+    'X-Client-Version': '1.0.0'
+  }
+
   // 添加 token 到请求头
   if (token) {
     options.header = {
@@ -203,8 +210,11 @@ export const http = {
         })
       }
 
-      // 准备请求头
-      const header = {}
+      // 准备请求头，添加自定义客户端标识
+      const header = {
+        'X-Client-Type': 'RiverChartLuoWrit-MiniProgram',
+        'X-Client-Version': '1.0.0'
+      }
 
       // 优先从全局对象获取 token
       let token = globalUserInfo?.token
