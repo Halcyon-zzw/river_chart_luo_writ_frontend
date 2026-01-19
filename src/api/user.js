@@ -8,7 +8,7 @@ export const userApi = {
   },
 
   // 微信登录
-  // 根据最新文档（feat_browse分支），使用 /auth/wechat-login 接口
+  // 根据最新文档（feat_0119分支），使用 /auth/wechat-login 接口
   // 参数：{ code, nickName?, avatarUrl? }
   wechatLogin(data) {
     return http.post('/auth/wechat-login', data)

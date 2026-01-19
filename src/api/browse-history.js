@@ -21,6 +21,11 @@ const browseHistoryApi = {
   // contentType: 'image' | 'note'
   clearAllBrowseHistory(contentType) {
     return http.delete('/browse-history/clear', { contentType })
+  },
+
+  // 获取时间范围类型列表
+  listTimeRangeTypeList() {
+    return http.get('/browse-history/listTimeRangeTypeList')
   }
 }
 

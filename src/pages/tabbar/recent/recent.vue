@@ -37,9 +37,9 @@
 
       <!-- 时间筛选 -->
       <view class="time-filter">
-        <picker mode="selector" :range="timeRanges" range-key="label" @change="onTimeRangeChange">
+        <picker mode="selector" :range="timeRanges" range-key="desc" @change="onTimeRangeChange">
           <view class="filter-btn">
-            <text class="filter-text">{{ selectedTimeRange.label }}</text>
+            <text class="filter-text">{{ selectedTimeRange.desc }}</text>
             <text class="filter-arrow">▼</text>
           </view>
         </picker>
@@ -85,19 +85,37 @@
             </view>
           </view>
 
-          <!-- 标题和浏览时间 -->
+          <!-- 标题 -->
           <view
             class="gallery-title-row"
             :class="{ 'long-pressing': longPressingId === item.id }"
             @touchstart="onImageTouchStart($event, item)"
             @touchmove="onImageTouchMove($event, item)"
             @touchend="onImageTouchEnd($event, item)"
-            @click="selectionMode ? toggleSelection(item) : goToImageDetail(item, 0)"
+            @click="selectionMode ? toggleSelection(item) : goToImageDetailPage(item)"
           >
-            <view class="title-time-wrapper">
-              <text class="gallery-title">{{ item.contentDTO?.title || '未命名' }}</text>
-              <text class="gallery-time">{{ formatTime(item.browseTime) }}</text>
+            <text class="gallery-title">{{ item.contentDTO?.title || '未命名' }}</text>
+          </view>
+
+          <!-- 标签和浏览时间 -->
+          <view class="gallery-meta">
+            <view v-if="item.contentDTO?.tagDTOList && item.contentDTO.tagDTOList.length > 0" class="gallery-tags">
+              <text
+                v-for="tag in getDisplayTags(item.contentDTO)"
+                :key="tag.id"
+                class="meta-tag"
+              >
+                {{ tag.name }}
+              </text>
+              <view
+                v-if="item.contentDTO?.tagDTOList && item.contentDTO.tagDTOList.length > 3"
+                class="tag-expand-btn"
+                @click.stop="toggleTagsExpand(item.contentDTO.id)"
+              >
+                <text>{{ expandedTags.has(item.contentDTO.id) ? '' : '...' }}</text>
+              </view>
             </view>
+            <text class="gallery-date">浏览时间: {{ formatTime(item.lastBrowseTime) }}</text>
           </view>
 
           <!-- 图片网格 -->
@@ -152,8 +170,25 @@
           >
             <text class="note-title">{{ item.contentDTO?.title || '未命名' }}</text>
             <text class="note-preview">{{ getTextPreview(item.contentDTO?.noteContent) }}</text>
+            <!-- 标签 -->
+            <view v-if="item.contentDTO?.tagDTOList && item.contentDTO.tagDTOList.length > 0" class="note-tags">
+              <text
+                v-for="tag in getDisplayTags(item.contentDTO)"
+                :key="tag.id"
+                class="note-tag"
+              >
+                {{ tag.name }}
+              </text>
+              <view
+                v-if="item.contentDTO?.tagDTOList && item.contentDTO.tagDTOList.length > 3"
+                class="tag-expand-btn"
+                @click.stop="toggleTagsExpand(item.contentDTO.id)"
+              >
+                <text>{{ expandedTags.has(item.contentDTO.id) ? '' : '...' }}</text>
+              </view>
+            </view>
             <view class="note-footer">
-              <text class="note-time">{{ formatTime(item.browseTime) }}</text>
+              <text class="note-time">浏览时间: {{ formatTime(item.lastBrowseTime) }}</text>
             </view>
           </view>
         </view>
@@ -219,11 +254,14 @@ const currentPage = ref(1)
 const hasMore = ref(true)
 const totalCount = ref(0)
 const searchKeyword = ref('')
-const selectedTimeRange = ref({ value: 'all', label: '全部' })
+const selectedTimeRange = ref({ code: 'all', desc: '全部' })
 
 // 批量操作
 const selectionMode = ref(false)
 const selectedIds = ref([])
+
+// 标签展开/收起状态
+const expandedTags = ref(new Set())
 
 // 图片预览相关
 const previewVisible = ref(false)
@@ -248,14 +286,10 @@ const tabs = [
   { type: 'note', label: '笔记' }
 ]
 
-// 时间范围配置
-const timeRanges = [
-  { value: 'all', label: '全部' },
-  { value: 'today', label: '今天' },
-  { value: 'threeDays', label: '三天内' },
-  { value: 'sevenDays', label: '七天内' },
-  { value: 'oneMonth', label: '一个月内' }
-]
+// 时间范围配置（从接口动态获取）
+const timeRanges = ref([
+  { code: 'all', desc: '全部' }
+])
 
 // 计算属性
 const userId = computed(() => userStore.userId)
@@ -268,9 +302,42 @@ const imageContents = computed(() => {
 })
 
 // 页面显示时刷新
+// 首次加载标志
+let isFirstLoad = true
+
 onShow(() => {
+  // 首次加载时获取时间范围类型
+  if (isFirstLoad) {
+    loadTimeRangeTypes()
+    isFirstLoad = false
+  }
   loadHistoryList(true)
 })
+
+// 获取时间范围类型列表
+const loadTimeRangeTypes = async () => {
+  try {
+    const res = await browseHistoryApi.listTimeRangeTypeList()
+    if (res.data && Array.isArray(res.data)) {
+      timeRanges.value = res.data
+      // 确保有默认选中值
+      if (timeRanges.value.length > 0 && !selectedTimeRange.value.code) {
+        selectedTimeRange.value = timeRanges.value[0]
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load time range types:', error)
+    // 失败时使用默认值
+    timeRanges.value = [
+      { code: 'all', desc: '全部' },
+      { code: 'today', desc: '今天' },
+      { code: 'threeDays', desc: '三天内' },
+      { code: 'sevenDays', desc: '七天内' },
+      { code: 'oneMonth', desc: '一个月内' }
+    ]
+    selectedTimeRange.value = timeRanges.value[0]
+  }
+}
 
 // 切换Tab
 const switchTab = (type) => {
@@ -303,12 +370,12 @@ const loadHistoryList = async (refresh = false) => {
 
     // 添加搜索参数
     if (searchKeyword.value) {
-      params.title = searchKeyword.value
+      params.contentTitle = searchKeyword.value
     }
 
     // 添加时间范围参数
-    if (selectedTimeRange.value.value !== 'all') {
-      params.timeRangeType = selectedTimeRange.value.value
+    if (selectedTimeRange.value.code && selectedTimeRange.value.code !== 'all') {
+      params.timeRangeType = selectedTimeRange.value.code
     }
 
     const res = await browseHistoryApi.getBrowseHistoryList(params)
@@ -354,7 +421,22 @@ const getDisplayImages = (contentDTO) => {
   return contentDTO.imageUrlList.slice(0, 12)
 }
 
-// 跳转到图片详情/预览
+// 跳转到图片详情页
+const goToImageDetailPage = (historyItem) => {
+  if (selectionMode.value) {
+    toggleSelection(historyItem)
+    return
+  }
+
+  // 跳转到图片详情页
+  if (historyItem.contentDTO) {
+    uni.navigateTo({
+      url: `/pages/content/image-detail/image-detail?id=${historyItem.contentDTO.id}`
+    })
+  }
+}
+
+// 打开图片预览
 const goToImageDetail = (historyItem, imageIndex) => {
   if (selectionMode.value) {
     toggleSelection(historyItem)
@@ -398,6 +480,36 @@ const onSearch = () => {
 const clearSearch = () => {
   searchKeyword.value = ''
   loadHistoryList(true)
+}
+
+// 切换标签展开/收起
+const toggleTagsExpand = (contentId) => {
+  if (expandedTags.value.has(contentId)) {
+    expandedTags.value.delete(contentId)
+  } else {
+    expandedTags.value.add(contentId)
+  }
+  // 触发响应式更新
+  expandedTags.value = new Set(expandedTags.value)
+}
+
+// 获取要展示的标签（前3个或全部）
+const getDisplayTags = (content) => {
+  if (!content) return []
+  const tags = content.tagDTOList || []
+  const MAX_DISPLAY = 3
+
+  if (tags.length <= MAX_DISPLAY) {
+    return tags
+  }
+
+  // 如果已展开，返回所有标签
+  if (expandedTags.value.has(content.id)) {
+    return tags
+  }
+
+  // 未展开，返回前3个
+  return tags.slice(0, MAX_DISPLAY)
 }
 
 // 时间范围改变
@@ -868,13 +980,6 @@ const formatTime = (time) => {
   transition: transform 0.2s ease;
 }
 
-.title-time-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 8rpx;
-  flex: 1;
-}
-
 .gallery-title {
   font-size: 32rpx;
   font-weight: 500;
@@ -882,9 +987,49 @@ const formatTime = (time) => {
   line-height: 1.4;
 }
 
-.gallery-time {
-  font-size: 24rpx;
+/* 标签和日期 */
+.gallery-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  padding: 12rpx 0;
+}
+
+.gallery-tags {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.meta-tag {
+  padding: 6rpx 16rpx;
+  background: rgba(0, 196, 179, 0.12);
+  border: 1rpx solid rgba(0, 196, 179, 0.25);
+  border-radius: 6rpx;
+  font-size: 22rpx;
+  color: #00c4b3;
+  white-space: nowrap;
+}
+
+.tag-expand-btn {
+  padding: 6rpx 12rpx;
+  font-size: 20rpx;
   color: #999999;
+  cursor: pointer;
+}
+
+.tag-expand-btn:active {
+  opacity: 0.6;
+}
+
+.gallery-date {
+  font-size: 22rpx;
+  color: #999999;
+  white-space: nowrap;
+  margin-left: auto;
 }
 
 /* 图片网格 */
@@ -982,6 +1127,25 @@ const formatTime = (time) => {
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
+}
+
+/* 文本标签 */
+.note-tags {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  flex-wrap: wrap;
+  margin-bottom: 16rpx;
+}
+
+.note-tag {
+  padding: 6rpx 16rpx;
+  background: rgba(0, 196, 179, 0.12);
+  border: 1rpx solid rgba(0, 196, 179, 0.25);
+  border-radius: 6rpx;
+  font-size: 22rpx;
+  color: #00c4b3;
+  white-space: nowrap;
 }
 
 .note-footer {

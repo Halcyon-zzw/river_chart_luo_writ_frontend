@@ -70,12 +70,34 @@
             :class="{ 'long-pressing': longPressingId === item.id }"
             @touchstart="onImageTouchStart($event, item)"
             @touchend="onImageTouchEnd($event, item)"
-            @click="selectionMode ? toggleSelection(item) : goToImageDetail(item, 0)"
+            @click="selectionMode ? toggleSelection(item) : goToImageDetailPage(item)"
           >
             <text class="gallery-title">{{ item.title || item.name || '未命名' }}</text>
             <view class="favorite-icon" @click.stop="toggleFavorite(item)">
               <text :class="['heart-icon', { 'favorited': item.isFavorited }]">{{ item.isFavorited ? '❤️' : '🤍' }}</text>
             </view>
+          </view>
+
+          <!-- 标签和日期 -->
+          <view class="gallery-meta">
+            <view v-if="item.tagDTOList && item.tagDTOList.length > 0" class="gallery-tags">
+              <text
+                v-for="tag in getDisplayTags(item)"
+                :key="tag.id"
+                class="meta-tag"
+              >
+                {{ tag.name }}
+              </text>
+              <!-- 展开按钮 -->
+              <view
+                v-if="item.tagDTOList && item.tagDTOList.length > 3"
+                class="tag-expand-btn"
+                @click.stop="toggleTagsExpand(item.id)"
+              >
+                <text>{{ expandedTags.has(item.id) ? '' : '...' }}</text>
+              </view>
+            </view>
+            <text class="gallery-date">{{ formatTime(item.createTime) }}</text>
           </view>
 
           <!-- 图片网格 -->
@@ -135,6 +157,23 @@
               </view>
             </view>
             <text class="note-preview">{{ getTextPreview(item.noteContent) }}</text>
+            <!-- 标签 -->
+            <view v-if="item.tagDTOList && item.tagDTOList.length > 0" class="note-tags">
+              <text
+                v-for="tag in getDisplayTags(item)"
+                :key="tag.id"
+                class="note-tag"
+              >
+                {{ tag.name }}
+              </text>
+              <view
+                v-if="item.tagDTOList && item.tagDTOList.length > 3"
+                class="tag-expand-btn"
+                @click.stop="toggleTagsExpand(item.id)"
+              >
+                <text>{{ expandedTags.has(item.id) ? '' : '...' }}</text>
+              </view>
+            </view>
             <view class="note-footer">
               <text class="note-time">{{ formatTime(item.createTime) }}</text>
             </view>
@@ -210,6 +249,9 @@ const selectionMode = ref(false)
 const selectedIds = ref([])
 const longPressingId = ref(null)
 const longPressTriggered = ref(false)
+
+// 标签展开/收起状态
+const expandedTags = ref(new Set())
 
 // 图片预览相关
 const previewVisible = ref(false)
@@ -361,7 +403,49 @@ const clearSearch = () => {
   loadCollections(true)
 }
 
-// 跳转到图片详情/预览
+// 切换标签展开/收起
+const toggleTagsExpand = (contentId) => {
+  if (expandedTags.value.has(contentId)) {
+    expandedTags.value.delete(contentId)
+  } else {
+    expandedTags.value.add(contentId)
+  }
+  // 触发响应式更新
+  expandedTags.value = new Set(expandedTags.value)
+}
+
+// 获取要展示的标签（前3个或全部）
+const getDisplayTags = (content) => {
+  const tags = content.tagDTOList || []
+  const MAX_DISPLAY = 3
+
+  if (tags.length <= MAX_DISPLAY) {
+    return tags
+  }
+
+  // 如果已展开，返回所有标签
+  if (expandedTags.value.has(content.id)) {
+    return tags
+  }
+
+  // 未展开，返回前3个
+  return tags.slice(0, MAX_DISPLAY)
+}
+
+// 跳转到图片详情页
+const goToImageDetailPage = (item) => {
+  if (selectionMode.value) {
+    toggleSelection(item)
+    return
+  }
+
+  // 跳转到图片详情页
+  uni.navigateTo({
+    url: `/pages/content/image-detail/image-detail?id=${item.contentId || item.id}`
+  })
+}
+
+// 打开图片预览
 const goToImageDetail = (item, imageIndex) => {
   if (selectionMode.value) {
     toggleSelection(item)
@@ -382,13 +466,11 @@ const onPreviewClose = () => {
   previewVisible.value = false
 }
 
-// 跳转详情
+// 跳转详情（文本内容）
 const goToDetail = (item) => {
-  const url = item.contentType === 'image'
-    ? `/pages/content/image-detail/image-detail?id=${item.contentId}`
-    : `/pages/content/note-detail/note-detail?id=${item.contentId}`
-
-  uni.navigateTo({ url })
+  uni.navigateTo({
+    url: `/pages/content/note-detail/note-detail?id=${item.contentId || item.id}`
+  })
 }
 
 // 切换收藏状态
@@ -680,6 +762,7 @@ onShow(() => {
 /* 滚动容器 */
 .collection-scroll {
   flex: 1;
+  background: #f5f5f5;
   overflow-y: auto;
 }
 
@@ -718,6 +801,51 @@ onShow(() => {
   color: #333333;
   line-height: 1.4;
   flex: 1;
+}
+
+/* 标签和日期 */
+.gallery-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  padding: 12rpx 0;
+}
+
+.gallery-tags {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.meta-tag {
+  padding: 6rpx 16rpx;
+  background: rgba(0, 196, 179, 0.12);
+  border: 1rpx solid rgba(0, 196, 179, 0.25);
+  border-radius: 6rpx;
+  font-size: 22rpx;
+  color: #00c4b3;
+  white-space: nowrap;
+}
+
+.tag-expand-btn {
+  padding: 6rpx 12rpx;
+  font-size: 20rpx;
+  color: #999999;
+  cursor: pointer;
+}
+
+.tag-expand-btn:active {
+  opacity: 0.6;
+}
+
+.gallery-date {
+  font-size: 22rpx;
+  color: #999999;
+  white-space: nowrap;
+  margin-left: auto;
 }
 
 /* 图片网格 */
@@ -824,6 +952,25 @@ onShow(() => {
   color: #999999;
   line-height: 1.6;
   margin-bottom: 20rpx;
+}
+
+/* 文本标签 */
+.note-tags {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  flex-wrap: wrap;
+  margin-bottom: 16rpx;
+}
+
+.note-tag {
+  padding: 6rpx 16rpx;
+  background: rgba(0, 196, 179, 0.12);
+  border: 1rpx solid rgba(0, 196, 179, 0.25);
+  border-radius: 6rpx;
+  font-size: 22rpx;
+  color: #00c4b3;
+  white-space: nowrap;
 }
 
 .note-footer {
