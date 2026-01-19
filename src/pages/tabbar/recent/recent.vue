@@ -514,7 +514,7 @@ const getDisplayTags = (content) => {
 
 // 时间范围改变
 const onTimeRangeChange = (e) => {
-  selectedTimeRange.value = timeRanges[e.detail.value]
+  selectedTimeRange.value = timeRanges.value[e.detail.value]
   loadHistoryList(true)
 }
 
