@@ -38,14 +38,15 @@
 
       <!-- 图片展示区 -->
       <view class="image-container" v-if="firstImageUrl" @click="previewImage">
-        <image
+        <network-image
           class="detail-image"
           :src="firstImageUrl"
           :key="firstImageUrl"
           mode="aspectFit"
+          width="100%"
+          height="auto"
           @error="onImageError"
-          @load="onImageLoad"
-        ></image>
+        />
       </view>
 
       <!-- 底部占位 -->
@@ -152,6 +153,7 @@ import { contentApi, tagApi, browseHistoryApi } from '@/api'
 import { getFullImageUrl } from '@/utils/image'
 import CustomNavBar from '@/components/custom-nav-bar/custom-nav-bar.vue'
 import TagSelector from '@/components/tag-selector/tag-selector.vue'
+import NetworkImage from '@/components/network-image/network-image.vue'
 
 const collectionStore = useCollectionStore()
 const userStore = useUserStore()
@@ -554,14 +556,12 @@ const formatTime = (time) => {
 .image-container {
   width: 100%;
   padding: 20rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  min-height: 300rpx;
 }
 
 .detail-image {
   width: 100%;
-  max-height: 800rpx;
+  display: block;
 }
 
 /* 底部占位 */

@@ -82,7 +82,9 @@
               v-if="category.coverImage"
               class="category-bg"
               :src="getFullImageUrl(category.coverImage)"
+              :key="getFullImageUrl(category.coverImage)"
               mode="aspectFill"
+              @error="onImageError"
             ></image>
             <view v-else class="category-bg-placeholder"></view>
 
@@ -753,6 +755,11 @@ const removeTagAssociation = async (category, tag) => {
       icon: 'none'
     })
   }
+}
+
+// 图片加载失败处理
+const onImageError = (e) => {
+  console.error('[主分类浏览] 图片加载失败:', e)
 }
 
 // 搜索处理

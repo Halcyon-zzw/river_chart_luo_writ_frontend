@@ -122,17 +122,21 @@
           <view class="image-grid">
             <view
               v-for="(url, index) in getDisplayImages(item.contentDTO)"
-              :key="index"
+              :key="`${item.contentDTO.id}-${index}`"
               class="grid-image-wrapper"
               @click="goToImageDetail(item, index)"
             >
-              <!-- 普通图片 -->
-              <image
+              <!-- 使用 NetworkImage 组件替代普通 image -->
+              <network-image
                 v-if="index < 11"
                 class="grid-image"
                 :src="getFullImageUrl(url)"
+                :key="getFullImageUrl(url)"
                 mode="aspectFill"
-              ></image>
+                width="100%"
+                height="100%"
+                @error="onImageError"
+              />
 
               <!-- +更多标识 -->
               <view v-if="index === 11 && item.contentDTO?.imageUrlList && item.contentDTO.imageUrlList.length > 12" class="more-overlay">
@@ -242,6 +246,7 @@ import { useUserStore } from '@/store/user'
 import { getFullImageUrl } from '@/utils/image'
 import ImagePreview from '@/components/image-preview/image-preview.vue'
 import CustomNavBar from '@/components/custom-nav-bar/custom-nav-bar.vue'
+import NetworkImage from '@/components/network-image/network-image.vue'
 
 const userStore = useUserStore()
 
@@ -734,6 +739,11 @@ const getTextPreview = (text) => {
   // 去除HTML标签
   const plainText = text.replace(/<[^>]+>/g, '')
   return plainText.length > 100 ? plainText.substring(0, 100) + '...' : plainText
+}
+
+// 图片加载失败处理
+const onImageError = (e) => {
+  console.error('[最近浏览] 图片加载失败:', e)
 }
 
 // 格式化时间

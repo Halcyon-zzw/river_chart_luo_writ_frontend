@@ -63,7 +63,13 @@
           </view>
           <view class="cover-upload">
             <view v-if="formData.coverImage" class="cover-preview" @click="previewCover">
-              <image class="cover-image" :src="getFullImageUrl(formData.coverImage)" mode="aspectFill"></image>
+              <image
+                class="cover-image"
+                :src="getFullImageUrl(formData.coverImage)"
+                :key="getFullImageUrl(formData.coverImage)"
+                mode="aspectFill"
+                @error="onImageError"
+              ></image>
               <view class="cover-remove" @click.stop="removeCover">
                 <text class="remove-icon">×</text>
               </view>
@@ -347,6 +353,11 @@ const previewCover = () => {
 // 移除封面图
 const removeCover = () => {
   formData.value.coverImage = ''
+}
+
+// 图片加载错误处理
+const onImageError = (e) => {
+  console.error('[子分类封面] 图片加载失败:', e)
 }
 
 // 表单验证

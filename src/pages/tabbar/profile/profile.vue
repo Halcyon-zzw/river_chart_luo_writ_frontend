@@ -13,7 +13,9 @@
             v-if="userInfo?.avatar"
             class="avatar-img"
             :src="getFullImageUrl(userInfo.avatar)"
+            :key="getFullImageUrl(userInfo.avatar)"
             mode="aspectFill"
+            @error="onImageError"
           ></image>
           <view v-else class="avatar-placeholder">
             <text class="avatar-text">{{ userInfo?.nickname?.[0] || '用' }}</text>
@@ -91,6 +93,11 @@ const userId = computed(() => userStore.userId)
 const getCacheSize = () => {
   // 这里简化处理，实际应该计算真实缓存大小
   cacheSize.value = '0 MB'
+}
+
+// 图片加载错误处理
+const onImageError = (e) => {
+  console.error('[个人中心] 头像加载失败:', e)
 }
 
 // 跳转设置

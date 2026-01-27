@@ -23,11 +23,19 @@
             <!-- 已上传的图片 -->
             <view
               v-for="(img, index) in imageList"
-              :key="index"
+              :key="`${index}-${img.url}`"
               class="image-item"
               @click="previewImage(index)"
             >
-              <image class="upload-image" :src="getFullImageUrl(img.url)" mode="aspectFill"></image>
+              <network-image
+                class="upload-image"
+                :src="getFullImageUrl(img.url)"
+                :key="getFullImageUrl(img.url)"
+                mode="aspectFill"
+                width="100%"
+                height="100%"
+                @error="onImageError"
+              />
               <!-- 删除按钮 -->
               <view class="delete-btn" @click.stop="removeImage(index)">
                 <text class="delete-icon">✕</text>
@@ -160,6 +168,7 @@ import config from '@/utils/config'
 import { getFullImageUrl } from '@/utils/image'
 import TagSelector from '@/components/tag-selector/tag-selector.vue'
 import CustomNavBar from '@/components/custom-nav-bar/custom-nav-bar.vue'
+import NetworkImage from '@/components/network-image/network-image.vue'
 
 // 数据
 const contentId = ref('')
@@ -385,6 +394,11 @@ const previewImage = (index) => {
 // 移除图片
 const removeImage = (index) => {
   imageList.value.splice(index, 1)
+}
+
+// 图片加载错误处理
+const onImageError = (e) => {
+  console.error('[图片上传] 图片加载失败:', e)
 }
 
 // 选择标签

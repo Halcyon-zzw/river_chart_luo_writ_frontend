@@ -31,17 +31,21 @@
       >
         <view
           class="image-wrapper"
+          :style="{
+            transform: `scale(${item.scale}) translate(${item.translateX}px, ${item.translateY}px)`
+          }"
           @touchstart="onImageTouchStart"
           @touchmove="onImageTouchMove"
           @touchend="onImageTouchEnd"
         >
-          <image
+          <network-image
             class="preview-image"
             :src="getFullImageUrl(item.url)"
+            :key="getFullImageUrl(item.url)"
             mode="aspectFit"
-            :style="{
-              transform: `scale(${item.scale}) translate(${item.translateX}px, ${item.translateY}px)`
-            }"
+            width="100%"
+            height="100%"
+            @error="onImageError"
           />
         </view>
       </swiper-item>
@@ -62,6 +66,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { getFullImageUrl } from '@/utils/image'
+import NetworkImage from '@/components/network-image/network-image.vue'
 
 const props = defineProps({
   visible: {
@@ -309,6 +314,11 @@ const onImageTouchEnd = (e) => {
   }
 }
 
+// 图片加载错误处理
+const onImageError = (e) => {
+  console.error('[图片预览] 图片加载失败:', e)
+}
+
 // 返回按钮
 const handleBack = () => {
   emit('close')
@@ -423,8 +433,8 @@ const handleClose = () => {
 }
 
 .preview-image {
-  max-width: 100%;
-  max-height: 100%;
+  width: 100%;
+  height: 100%;
   transition: transform 0.2s ease;
 }
 
